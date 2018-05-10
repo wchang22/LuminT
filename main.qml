@@ -2,16 +2,36 @@ import QtQuick 2.7
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.3
 
+import communications 1.0
+
 ApplicationWindow {
     visible: true
     width: 640
     height: 480
-    title: qsTr("LuminT")
+    title: qsTr("LuminT") 
 
     StackView {
         id: window
         transformOrigin: Item.TopLeft
         anchors.fill: parent
+
+        Loader {
+            id: senderLoader
+            active: false
+            sourceComponent:
+            Sender {
+                id: sender
+            }
+        }
+
+        Loader {
+            id: receiverLoader
+            active: false
+            sourceComponent:
+            Receiver {
+                id: receiver
+            }
+        }
 
         Page {
             transformOrigin: Item.Center
@@ -53,7 +73,10 @@ ApplicationWindow {
                     Layout.preferredWidth: 150
                     anchors.verticalCenterOffset: -40
                     anchors.horizontalCenter: parent.horizontalCenter
-                    onClicked: window.push(sender)
+                    onClicked: {
+                        window.push(senderPage)
+                        senderLoader.active = true
+                    }
                 }
 
                 Button {
@@ -66,31 +89,26 @@ ApplicationWindow {
                     Layout.preferredWidth: 150
                     anchors.verticalCenterOffset: 40
                     anchors.horizontalCenter: parent.horizontalCenter
-                    onClicked: window.push(receiver)
+                    onClicked: {
+                        window.push(receiverPage)
+                        receiverLoader.active = true
+                    }
                 }
 
             }
         }
 
         Component {
-            id: sender
+            id: senderPage
             Page {
                 anchors.fill: parent
-
-                Label {
-                    id: label
-                    x: 154
-                    y: 79
-                    text: qsTr("Label")
-                }
             }
         }
 
         Component {
-            id: receiver
+            id: receiverPage
             Page {
                 anchors.fill: parent
-
             }
         }
 

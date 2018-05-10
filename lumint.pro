@@ -9,12 +9,18 @@
 #--------------------------------------------------------
 #--------------------------------------------------------
 
-QT += quick
+QT += quick network
 CONFIG += c++14
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
-SOURCES += main.cpp
+HEADERS += \
+    modules/communications/receiver.hpp \
+    modules/communications/sender.hpp
+
+SOURCES += main.cpp \
+    modules/communications/receiver.cpp \
+    modules/communications/sender.cpp
 
 RESOURCES += qml.qrc
 
