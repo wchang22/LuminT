@@ -8,43 +8,40 @@ const int PORT = 4002;
 
 Sender::Sender()
 {
+    socketState = SenderState::DISCONNECTED;
     connect(&socket, &QSslSocket::encrypted, this, &Sender::ready);
-    connect(&socket, &QSslSocket::stateChanged, this, &Sender::stateChanged);
-    connect(&socket, SIGNAL(sslErrors(QList<QSslError>)),
-            this, SLOT(sslErrors(QList<QSslError>)));
     connect(&socket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(error(QAbstractSocket::SocketError)));
-
-    connectToReceiver();
+    connect(&socket, &QSslSocket::disconnected, this, &Sender::stopped);
 }
 
 Sender::~Sender()
 {
-
+    socketState = SenderState::DISCONNECTED;
 }
 
 void Sender::ready()
 {
-    qDebug() << "Ready";
+    socketState = SenderState::CONNECTED;
+    emit connected();
 }
 
-void Sender::sslErrors(QList<QSslError> error)
+void Sender::stopped()
 {
-    for (int i = 0; i < error.size(); i++)
-        qDebug() << error.at(i);
+    socketState = SenderState::DISCONNECTED;
+    emit disconnected();
 }
 
 void Sender::error(QAbstractSocket::SocketError error)
 {
-    qDebug() << error;
+    if (socketState != SenderState::CONNECTING)
+        return;
+
+    if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
+        connectToReceiver();
 }
 
-void Sender::stateChanged(QAbstractSocket::SocketState state)
-{
-
-}
-
-void Sender::connectToReceiver()
+void Sender::setup()
 {
     socket.addCaCertificates("rootCA.pem");
 
@@ -52,6 +49,20 @@ void Sender::connectToReceiver()
     auto serverCert = QSslCertificate::fromPath("server.pem");
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     socket.ignoreSslErrors(errorsToIgnore);
+}
 
+void Sender::disconnectFromReceiver()
+{
+    if (socketState == SenderState::DISCONNECTED)
+        return;
+
+    socketState = SenderState::DISCONNECTED;
+    socket.disconnectFromHost();
+}
+
+
+void Sender::connectToReceiver()
+{
     socket.connectToHostEncrypted("127.0.0.1", PORT);
+    socketState = SenderState::CONNECTING;
 }

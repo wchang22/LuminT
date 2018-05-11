@@ -2,5 +2,10 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>qtquickcontrols2.conf</file>
+        <file>SenderWaitingPage.qml</file>
+        <file>StartPage.qml</file>
+        <file>ReceiverWaitingPage.qml</file>
+        <file>SenderPage.qml</file>
+        <file>ReceiverPage.qml</file>
     </qresource>
 </RCC>

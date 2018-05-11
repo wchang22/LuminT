@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QLoggingCategory>
 
 #include "modules/communications/receiver.hpp"
 #include "modules/communications/sender.hpp"
@@ -8,6 +9,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
+
+    QLoggingCategory::setFilterRules("qt.network.ssl.warning=false");
 
     qmlRegisterType<Receiver>("communications", 1, 0, "Receiver");
     qmlRegisterType<Sender>("communications", 1, 0, "Sender");

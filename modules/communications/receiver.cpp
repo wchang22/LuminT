@@ -6,24 +6,59 @@ const int PORT = 4002;
 
 Receiver::Receiver()
 {
-    server.setMaxPendingConnections(1);
-    server.listen(QHostAddress::Any, PORT);
-
     socket = nullptr;
-
+    serverState = ServerState::DISCONNECTED;
+    server.setMaxPendingConnections(1);
     connect(&server, &QTcpServer::newConnection,
-            this, &Receiver::incomingConnection);
+            this, &Receiver::connectionReceived);
 }
 
 Receiver::~Receiver()
 {
+    serverState = ServerState::DISCONNECTED;
     if (socket != nullptr)
         socket->deleteLater();
 }
 
-void Receiver::incomingConnection()
+void Receiver::startServer()
 {
-    qintptr socketDescriptor = server.nextPendingConnection()->socketDescriptor();
+    if (serverState == ServerState::CONNECTING)
+        return;
+
+    server.listen(QHostAddress::Any, PORT);
+
+    serverState = ServerState::CONNECTING;
+}
+
+void Receiver::stopServer()
+{
+    if (serverState == ServerState::DISCONNECTED)
+        return;
+
+    server.close();
+    serverState = ServerState::DISCONNECTED;
+
+    if (serverState == ServerState::CONNECTING)
+        return;
+
+    disconnect(socket, &QSslSocket::encrypted, this, &Receiver::connected);
+    disconnect(socket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
+    disconnect(socket, &QSslSocket::disconnected, this, &Receiver::stopped);
+
+    socket->deleteLater();
+    socket = nullptr;
+}
+
+void Receiver::connectionReceived()
+{
+    incomingConnection(server.nextPendingConnection()->socketDescriptor());
+}
+
+void Receiver::incomingConnection(qintptr socketDescriptor)
+{
+    server.pauseAccepting();
+
+    serverState = ServerState::ENCRYPTING;
 
     socket = new QSslSocket();
 
@@ -46,19 +81,27 @@ void Receiver::incomingConnection()
 
     socket->setLocalCertificate(cert);
     socket->setPrivateKey(key);
+    server.close();
 
     addPendingConnection(socket);
-    server.pauseAccepting();
 
     connect(socket, &QSslSocket::encrypted, this, &Receiver::connected);
     connect(socket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
+    connect(socket, &QSslSocket::disconnected, this, &Receiver::stopped);
 
     socket->startServerEncryption();
 }
 
-void Receiver::connected()
+void Receiver::ready()
 {
-    qDebug() << "Connected";
+    serverState = ServerState::ENCRYPTED;
+    emit connected();
+}
+
+void Receiver::stopped()
+{
+    stopServer();
+    emit disconnected();
 }
 
 void Receiver::handleReadyRead()

@@ -6,111 +6,66 @@ import communications 1.0
 
 ApplicationWindow {
     visible: true
-    width: 640
+    width: 480
     height: 480
     title: qsTr("LuminT") 
 
+    Sender {
+        id: sender
+        onConnected: window.push(senderComp)
+        onDisconnected: window.pop(null)
+    }
+
+    Receiver {
+        id: receiver
+        onConnected: window.push(receiverComp)
+        onDisconnected: window.pop(null)
+    }
+
+    header: ToolBar {
+        ToolButton {
+            text: qsTr("‹")
+            onClicked: {
+                sender.disconnectFromReceiver();
+                receiver.stopServer();
+                window.pop(null)
+            }
+        }
+    }
+
     StackView {
         id: window
+        clip: false
         transformOrigin: Item.TopLeft
         anchors.fill: parent
+        initialItem: startPageComp
 
-        Loader {
-            id: senderLoader
-            active: false
-            sourceComponent:
-            Sender {
-                id: sender
-            }
-        }
 
-        Loader {
-            id: receiverLoader
-            active: false
-            sourceComponent:
-            Receiver {
-                id: receiver
-            }
-        }
-
-        Page {
-            transformOrigin: Item.Center
-            anchors.fill: parent
-            title: "LuminT"
-
-            Label {
-                id: title
-                x: 242
-                text: "LuminT"
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 50
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 360
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                font.italic: true
-                font.bold: true
-                font.pointSize: 50
-            }
-
-            ColumnLayout {
-                id: column
-                width: 200
-                spacing: 0
-                anchors.top: parent.top
-                anchors.topMargin: 200
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 0
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                Button {
-                    id: send
-                    width: 150
-                    height: 50
-                    text: qsTr("Send")
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.preferredHeight: 40
-                    Layout.preferredWidth: 150
-                    anchors.verticalCenterOffset: -40
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    onClicked: {
-                        window.push(senderPage)
-                        senderLoader.active = true
-                    }
-                }
-
-                Button {
-                    id: receive
-                    width: 150
-                    height: 50
-                    text: qsTr("Receive")
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-                    Layout.preferredHeight: 40
-                    Layout.preferredWidth: 150
-                    anchors.verticalCenterOffset: 40
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    onClicked: {
-                        window.push(receiverPage)
-                        receiverLoader.active = true
-                    }
-                }
-
-            }
+        Component {
+            id: startPageComp
+            StartPage {}
         }
 
         Component {
-            id: senderPage
-            Page {
-                anchors.fill: parent
-            }
+            id: senderWaitingComp
+            SenderWaitingPage {}
         }
 
         Component {
-            id: receiverPage
-            Page {
-                anchors.fill: parent
-            }
+            id: receiverWaitingComp
+            ReceiverWaitingPage {}
         }
 
+        Component {
+            id: senderComp
+            SenderPage {}
+        }
+
+        Component {
+            id: receiverComp
+            ReceiverPage {}
+        }
     }
+
+
 }
