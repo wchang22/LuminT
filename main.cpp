@@ -1,6 +1,8 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QLoggingCategory>
+#include <QFile>
+#include <QUuid>
 
 #include "modules/communications/receiver.hpp"
 #include "modules/communications/sender.hpp"
@@ -19,6 +21,15 @@ int main(int argc, char *argv[])
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;
+
+    QFile configFile("lumint.conf");
+    if (!configFile.exists())
+    {
+        configFile.open(QIODevice::WriteOnly);
+        configFile.write(QUuid::createUuid()
+                         .toString().toStdString().substr(1, 9).c_str(), 8);
+        configFile.close();
+    }
 
     return app.exec();
 }

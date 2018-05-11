@@ -31,12 +31,12 @@ private slots:
      void incomingConnection(qintptr socketDescriptor);
      void connectionReceived();
      void ready();
-     void handleReadyRead();
      void stopped();
+     void handleReadyRead();
 
 private:
     QTcpServer server;
-    QSslSocket *socket;
+    QSslSocket *serverSocket;
     ServerState serverState;
 };
 

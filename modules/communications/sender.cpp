@@ -1,68 +1,97 @@
-#include "sender.hpp"
-#include <QSslKey>
 #include <QFile>
-#include <QSslConfiguration>
-#include <QDir>
+#include <QNetworkInterface>
+
+#include "sender.hpp"
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
 
 const int PORT = 4002;
 
+//-----------------------------------------------------------------------------
+// Constructor/Destructor
+//-----------------------------------------------------------------------------
+
 Sender::Sender()
 {
-    socketState = SenderState::DISCONNECTED;
-    connect(&socket, &QSslSocket::encrypted, this, &Sender::ready);
-    connect(&socket, SIGNAL(error(QAbstractSocket::SocketError)),
+    connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
+    connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(error(QAbstractSocket::SocketError)));
-    connect(&socket, &QSslSocket::disconnected, this, &Sender::stopped);
+    connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
+
+    clientState = ClientState::DISCONNECTED;
 }
 
 Sender::~Sender()
 {
-    socketState = SenderState::DISCONNECTED;
+    if (clientState != ClientState::DISCONNECTED)
+        clientSocket.abort();
 }
+
+//-----------------------------------------------------------------------------
+// Connection Slots
+//-----------------------------------------------------------------------------
 
 void Sender::ready()
 {
-    socketState = SenderState::CONNECTED;
+    clientState = ClientState::ENCRYPTED;
     emit connected();
 }
 
 void Sender::stopped()
 {
-    socketState = SenderState::DISCONNECTED;
+    clientState = ClientState::DISCONNECTED;
     emit disconnected();
 }
 
 void Sender::error(QAbstractSocket::SocketError error)
 {
-    if (socketState != SenderState::CONNECTING)
+    if (clientState != ClientState::CONNECTING)
         return;
 
     if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
         connectToReceiver();
 }
 
+//-----------------------------------------------------------------------------
+// Connection Methods
+//-----------------------------------------------------------------------------
+
 void Sender::setup()
 {
-    socket.addCaCertificates("rootCA.pem");
+    clientSocket.addCaCertificates("rootCA.pem");
 
     QList<QSslError> errorsToIgnore;
     auto serverCert = QSslCertificate::fromPath("server.pem");
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
-    socket.ignoreSslErrors(errorsToIgnore);
+    clientSocket.ignoreSslErrors(errorsToIgnore);
+}
+
+QString Sender::getIPAddress()
+{
+    foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
+    {
+        if (address.protocol() == QAbstractSocket::IPv4Protocol &&
+            address != QHostAddress(QHostAddress::LocalHost))
+            return address.toString();
+    }
+
+    return "";
 }
 
 void Sender::disconnectFromReceiver()
 {
-    if (socketState == SenderState::DISCONNECTED)
+    if (clientState == ClientState::DISCONNECTED)
         return;
 
-    socketState = SenderState::DISCONNECTED;
-    socket.disconnectFromHost();
+    clientSocket.abort();
+    stopped();
 }
 
 
 void Sender::connectToReceiver()
 {
-    socket.connectToHostEncrypted("127.0.0.1", PORT);
-    socketState = SenderState::CONNECTING;
+    clientSocket.connectToHostEncrypted(getIPAddress(), PORT);
+    clientState = ClientState::CONNECTING;
 }

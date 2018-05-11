@@ -57,6 +57,11 @@ ApplicationWindow {
         }
 
         Component {
+            id: registerComp
+            RegisterPage {}
+        }
+
+        Component {
             id: senderComp
             SenderPage {}
         }

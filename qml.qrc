@@ -7,5 +7,6 @@
         <file>ReceiverWaitingPage.qml</file>
         <file>SenderPage.qml</file>
         <file>ReceiverPage.qml</file>
+        <file>RegisterPage.qml</file>
     </qresource>
 </RCC>

@@ -1,24 +1,110 @@
-#include "receiver.hpp"
 #include <QSslKey>
 #include <QFile>
 
+#include "receiver.hpp"
+
+//-----------------------------------------------------------------------------
+// Constants
+//-----------------------------------------------------------------------------
+
 const int PORT = 4002;
+
+//-----------------------------------------------------------------------------
+// Constructor/Destructor
+//-----------------------------------------------------------------------------
 
 Receiver::Receiver()
 {
-    socket = nullptr;
-    serverState = ServerState::DISCONNECTED;
-    server.setMaxPendingConnections(1);
     connect(&server, &QTcpServer::newConnection,
             this, &Receiver::connectionReceived);
+    server.setMaxPendingConnections(1);
+    serverSocket = nullptr;
+    serverState = ServerState::DISCONNECTED;
 }
 
 Receiver::~Receiver()
 {
-    serverState = ServerState::DISCONNECTED;
-    if (socket != nullptr)
-        socket->deleteLater();
+    if (server.isListening())
+        server.close();
+
+    if (serverSocket != nullptr)
+    {
+        serverSocket->deleteLater();
+        serverSocket = nullptr;
+    }
 }
+
+//-----------------------------------------------------------------------------
+// Connection Slots
+//-----------------------------------------------------------------------------
+
+void Receiver::connectionReceived()
+{
+    incomingConnection(server.nextPendingConnection()->socketDescriptor());
+}
+
+void Receiver::incomingConnection(qintptr serverSocketDescriptor)
+{
+    serverState = ServerState::ENCRYPTING;
+
+    server.close();
+
+    serverSocket = new QSslSocket();
+
+    if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
+    {
+        delete serverSocket;
+        return;
+    }
+
+    QFile certFile("server.pem");
+    QFile keyFile("server.key");
+    if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
+    {
+        delete serverSocket;
+        return;
+    }
+    QSslCertificate cert = QSslCertificate(certFile.readAll());
+    QSslKey key = QSslKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
+
+    certFile.close();
+    keyFile.close();
+
+    if (key.isNull())
+    {
+        delete serverSocket;
+        return;
+    }
+
+    serverSocket->setLocalCertificate(cert);
+    serverSocket->setPrivateKey(key);
+
+    addPendingConnection(serverSocket);
+
+    connect(serverSocket, &QSslSocket::encrypted,
+            this, &Receiver::connected);
+    connect(serverSocket, &QSslSocket::readyRead,
+            this, &Receiver::handleReadyRead);
+    connect(serverSocket, &QSslSocket::disconnected,
+            this, &Receiver::stopped);
+
+    serverSocket->startServerEncryption();
+}
+
+void Receiver::ready()
+{
+    serverState = ServerState::ENCRYPTED;
+    emit connected();
+}
+
+void Receiver::stopped()
+{
+    stopServer();
+}
+
+//-----------------------------------------------------------------------------
+// Connection Methods
+//-----------------------------------------------------------------------------
 
 void Receiver::startServer()
 {
@@ -35,74 +121,31 @@ void Receiver::stopServer()
     if (serverState == ServerState::DISCONNECTED)
         return;
 
+    emit disconnected();
+
     server.close();
-    serverState = ServerState::DISCONNECTED;
 
     if (serverState == ServerState::CONNECTING)
+    {
+        serverState = ServerState::DISCONNECTED;
         return;
+    }
 
-    disconnect(socket, &QSslSocket::encrypted, this, &Receiver::connected);
-    disconnect(socket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
-    disconnect(socket, &QSslSocket::disconnected, this, &Receiver::stopped);
+    serverState = ServerState::DISCONNECTED;
 
-    socket->deleteLater();
-    socket = nullptr;
+    disconnect(serverSocket, &QSslSocket::encrypted,
+               this, &Receiver::connected);
+    disconnect(serverSocket, &QSslSocket::readyRead,
+               this, &Receiver::handleReadyRead);
+    disconnect(serverSocket, &QSslSocket::disconnected,
+               this, &Receiver::stopped);
+
+    serverSocket->abort();
 }
 
-void Receiver::connectionReceived()
-{
-    incomingConnection(server.nextPendingConnection()->socketDescriptor());
-}
-
-void Receiver::incomingConnection(qintptr socketDescriptor)
-{
-    server.pauseAccepting();
-
-    serverState = ServerState::ENCRYPTING;
-
-    socket = new QSslSocket();
-
-    if (!socket->setSocketDescriptor(socketDescriptor))
-        return;
-
-    QFile certFile("server.pem");
-    QFile keyFile("server.key");
-    if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
-        return;
-
-    QSslCertificate cert = QSslCertificate(certFile.readAll());
-    QSslKey key = QSslKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
-
-    certFile.close();
-    keyFile.close();
-
-    if (key.isNull())
-        return;
-
-    socket->setLocalCertificate(cert);
-    socket->setPrivateKey(key);
-    server.close();
-
-    addPendingConnection(socket);
-
-    connect(socket, &QSslSocket::encrypted, this, &Receiver::connected);
-    connect(socket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
-    connect(socket, &QSslSocket::disconnected, this, &Receiver::stopped);
-
-    socket->startServerEncryption();
-}
-
-void Receiver::ready()
-{
-    serverState = ServerState::ENCRYPTED;
-    emit connected();
-}
-
-void Receiver::stopped()
-{
-    stopServer();
-    emit disconnected();
-}
+//-----------------------------------------------------------------------------
+// Read/Write
+//-----------------------------------------------------------------------------
 
 void Receiver::handleReadyRead()
 {

@@ -11,11 +11,11 @@ public:
     Sender();
     ~Sender();
 
-    enum class SenderState : int
+    enum class ClientState : int
     {
         DISCONNECTED        = 0,
         CONNECTING          = 1,
-        CONNECTED           = 2,
+        ENCRYPTED           = 2,
     };
 
 signals:
@@ -33,8 +33,10 @@ private slots:
     void error(QAbstractSocket::SocketError error);
 
 private:
-    QSslSocket socket;
-    SenderState socketState;
+    QString getIPAddress();
+
+    QSslSocket clientSocket;
+    ClientState clientState;
 };
 
 #endif // SENDER_HPP
