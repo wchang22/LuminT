@@ -23,9 +23,16 @@ Page {
             Layout.preferredHeight: 70
             Layout.preferredWidth: 180
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
-            font.italic: true
             font.bold: true
             font.pointSize: 50
+        }
+
+        Label {
+            id: label
+            text: qsTr("Luminous Transfer")
+            font.pointSize: 25
+            font.italic: true
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
         }
 
         Button {
@@ -38,6 +45,7 @@ Page {
             onClicked: window.push(senderWaitingComp)
         }
 
+
         Button {
             id: receive
             text: qsTr("Receive")
@@ -47,13 +55,16 @@ Page {
             onClicked: window.push(receiverWaitingComp)
         }
 
+
         Button {
             id: register
             text: qsTr("Register Devices")
+            Layout.rowSpan: 1
             Layout.preferredHeight: 40
             Layout.preferredWidth: 150
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             onClicked: window.push(registerComp)
         }
+
     }
 }

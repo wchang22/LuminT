@@ -57,8 +57,8 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
         return;
     }
 
-    QFile certFile("server.pem");
-    QFile keyFile("server.key");
+    QFile certFile(QStringLiteral("server.pem"));
+    QFile keyFile(QStringLiteral("server.key"));
     if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
     {
         delete serverSocket;

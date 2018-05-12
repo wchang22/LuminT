@@ -60,15 +60,15 @@ void Sender::error(QAbstractSocket::SocketError error)
 
 void Sender::setup()
 {
-    clientSocket.addCaCertificates("rootCA.pem");
+    clientSocket.addCaCertificates(QStringLiteral("rootCA.pem"));
 
     QList<QSslError> errorsToIgnore;
-    auto serverCert = QSslCertificate::fromPath("server.pem");
+    auto serverCert = QSslCertificate::fromPath(QStringLiteral("server.pem"));
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
 }
 
-QString Sender::getIPAddress()
+QString Sender::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
     {
@@ -88,7 +88,6 @@ void Sender::disconnectFromReceiver()
     clientSocket.abort();
     stopped();
 }
-
 
 void Sender::connectToReceiver()
 {

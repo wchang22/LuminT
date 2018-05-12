@@ -33,7 +33,7 @@ private slots:
     void error(QAbstractSocket::SocketError error);
 
 private:
-    QString getIPAddress();
+    QString getIPAddress() const;
 
     QSslSocket clientSocket;
     ClientState clientState;
