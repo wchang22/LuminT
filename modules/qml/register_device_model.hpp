@@ -8,7 +8,7 @@ class RegisterDeviceList;
 class RegisterDeviceModel : public QAbstractListModel
 {
     Q_OBJECT
-    Q_PROPERTY(RegisterDeviceList *deviceList WRITE setDeviceList)
+    Q_PROPERTY(RegisterDeviceList *deviceList READ getDeviceList WRITE setDeviceList)
 
 public:
     explicit RegisterDeviceModel(QObject *parent = nullptr);
@@ -36,6 +36,8 @@ public:
     virtual QHash<int, QByteArray> roleNames() const override;
 
     void setDeviceList(RegisterDeviceList *value);
+
+    RegisterDeviceList *getDeviceList() const;
 
 private:
     RegisterDeviceList *deviceList;

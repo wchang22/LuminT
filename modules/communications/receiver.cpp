@@ -25,14 +25,12 @@ Receiver::Receiver()
 
 Receiver::~Receiver()
 {
+
     if (server.isListening())
         server.close();
 
     if (!serverSocket)
-    {
-        serverSocket->deleteLater();
-        serverSocket = nullptr;
-    }
+        delete serverSocket;
 }
 
 //-----------------------------------------------------------------------------

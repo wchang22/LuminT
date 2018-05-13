@@ -19,9 +19,8 @@ Sender::Sender(QObject *parent)
     , clientState(ClientState::DISCONNECTED)
 {
     connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
-    connect(&clientSocket,
-            qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error),
-            this, &Sender::error);
+    connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+            this, SLOT(error(QAbstractSocket::SocketError)));
     connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
 }
 

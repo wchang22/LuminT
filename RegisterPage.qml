@@ -112,7 +112,6 @@ Page {
             model: RegisterDeviceModel {
                 deviceList: registerDeviceList
                 Component.onCompleted: {
-                    registerDeviceList.readDeviceItems()
                     thisIDLabel.text = qsTr("Your device ID: " +
                                             registerDeviceList.getThisID())
                 }

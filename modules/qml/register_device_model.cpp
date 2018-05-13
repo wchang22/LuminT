@@ -10,7 +10,7 @@ RegisterDeviceModel::RegisterDeviceModel(QObject *parent)
 
 RegisterDeviceModel::~RegisterDeviceModel()
 {
-    deviceList->writeDeviceItems();
+
 }
 
 int RegisterDeviceModel::rowCount(const QModelIndex &parent) const
@@ -119,4 +119,9 @@ void RegisterDeviceModel::setDeviceList(RegisterDeviceList *value)
     }
 
     endResetModel();
+}
+
+RegisterDeviceList *RegisterDeviceModel::getDeviceList() const
+{
+    return deviceList;
 }

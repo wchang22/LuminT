@@ -26,7 +26,7 @@ public:
     QVector<RegisterDeviceItem> items() const;
 
     bool setItemAt(int index, const RegisterDeviceItem &item);
-    void generateConf(bool randomID = true);
+    void generateConf();
 
 signals:
     void preItemInserted(int index);

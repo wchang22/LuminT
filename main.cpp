@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     RegisterDeviceList registerDeviceList;
 
     registerDeviceList.generateConf();
+    registerDeviceList.readDeviceItems();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(

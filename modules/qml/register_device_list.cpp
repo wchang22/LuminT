@@ -17,7 +17,7 @@ RegisterDeviceList::RegisterDeviceList()
 
 RegisterDeviceList::~RegisterDeviceList()
 {
-
+    writeDeviceItems();
 }
 
 QVector<RegisterDeviceItem> RegisterDeviceList::items() const
@@ -41,38 +41,24 @@ bool RegisterDeviceList::setItemAt(int index, const RegisterDeviceItem &item)
     return true;
 }
 
-void RegisterDeviceList::generateConf(bool randomID)
+void RegisterDeviceList::generateConf()
 {
     if (configFile.exists())
         return;
 
     configFile.open(QIODevice::WriteOnly);
 
-    if (randomID)
-        configFile.write((QUuid::createUuid()
-                          .toString().toStdString()
-                          .substr(1, 1+DEVICE_ID_SIZE))
-                          .c_str(), DEVICE_ID_SIZE);
-    else
-        configFile.write(thisID.toUtf8());
+    configFile.write((QUuid::createUuid()
+                      .toString().toStdString()
+                      .substr(1, 1+DEVICE_ID_SIZE))
+                      .c_str(), DEVICE_ID_SIZE);
 
     configFile.close();
 }
 
 void RegisterDeviceList::readDeviceItems()
 {
-    // Only need to read when deviceItems is empty
-    // (only has the one add-new-id field)
-    if (deviceItems.length() != 1)
-        return;
-
-    // If for some reason the config file has been deleted,
-    // regenerate it
-    if (!configFile.open(QIODevice::ReadOnly))
-    {
-        generateConf(thisID.length() == 0);
-        configFile.open(QIODevice::ReadOnly);
-    }
+    configFile.open(QIODevice::ReadOnly);
 
     // first ID is our ID
     thisID = QString(configFile.readLine(DEVICE_ID_SIZE+1));
@@ -81,13 +67,9 @@ void RegisterDeviceList::readDeviceItems()
 
     while (!configFile.atEnd())
     {
-        emit preItemInserted(seq);
-
         // Read all IDs and append to deviceItems vector
         QString line(configFile.readLine(DEVICE_ID_SIZE+1));
         deviceItems.append({ line, true, seq++, QStringLiteral("\u2013") });
-
-        emit postItemInserted();
     }
 
     configFile.close();

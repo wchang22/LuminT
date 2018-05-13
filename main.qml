@@ -10,8 +10,6 @@ ApplicationWindow {
     height: 480
     title: qsTr("LuminT") 
 
-    signal saveFile()
-
     Sender {
         id: sender
         onConnected: window.push(senderComp)
