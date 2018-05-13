@@ -1,8 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QLoggingCategory>
-#include <QFile>
-#include <QUuid>
 #include <QQmlContext>
 
 #include "modules/communications/receiver.hpp"
@@ -26,23 +24,14 @@ int main(int argc, char *argv[])
 
     RegisterDeviceList registerDeviceList;
 
+    registerDeviceList.generateConf();
+
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(
                 QStringLiteral("registerDeviceList"), &registerDeviceList);
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;
-
-    QFile configFile(CONFIG_FILE_NAME);
-    if (!configFile.exists())
-    {
-        configFile.open(QIODevice::WriteOnly);
-        configFile.write((QUuid::createUuid()
-                          .toString().toStdString()
-                          .substr(1, 1+DEVICE_ID_SIZE))
-                          .c_str(), DEVICE_ID_SIZE);
-        configFile.close();
-    }
 
     return app.exec();
 }

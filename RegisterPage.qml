@@ -21,14 +21,22 @@ Page {
             Layout.columnSpan: 1
             Layout.rowSpan: 1
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            font.pointSize: 50
+            font.pointSize: 40
+        }
+
+        Label {
+            id: thisIDLabel
+            font.family: "Segoe UI"
+            Layout.columnSpan: 1
+            Layout.rowSpan: 1
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            font.pointSize: 25
         }
 
         Label {
             id: invalidID
             color: "#e00000"
             text: qsTr("*Invalid Device ID")
-            font.bold: true
             font.family: "Segoe UI"
             Layout.columnSpan: 1
             Layout.rowSpan: 1
@@ -48,6 +56,7 @@ Page {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             spacing: 5
             clip: true
+
             delegate: RowLayout {
                 width: 350
                 layoutDirection: Qt.LeftToRight
@@ -57,7 +66,7 @@ Page {
                 TextField {
                     id: textField
                     font.pointSize: 15
-                    placeholderText: "Add 8-digit Device ID"
+                    placeholderText: qsTr("Add 8-digit Device ID")
                     text: deviceID
                     echoMode: TextInput.Normal
                     Layout.preferredWidth: 360
@@ -102,7 +111,11 @@ Page {
             }
             model: RegisterDeviceModel {
                 deviceList: registerDeviceList
-                Component.onCompleted: registerDeviceList.readDeviceItems()
+                Component.onCompleted: {
+                    registerDeviceList.readDeviceItems()
+                    thisIDLabel.text = qsTr("Your device ID: " +
+                                            registerDeviceList.getThisID())
+                }
             }
         }
 

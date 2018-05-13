@@ -6,7 +6,7 @@ Page {
     id: startPage
     objectName: "startPage"
     transformOrigin: Item.Center
-    title: "LuminT"
+    title: qsTr("LuminT")
 
     ColumnLayout {
         id: columnLayout
@@ -14,7 +14,7 @@ Page {
 
         Label {
             id: title
-            text: "LuminT"
+            text: qsTr("LuminT")
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
             Layout.fillHeight: false

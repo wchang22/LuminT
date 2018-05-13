@@ -14,7 +14,6 @@ struct RegisterDeviceItem
     bool readOnlyStatus;
     int seq;
     QString buttonText;
-
 };
 
 class RegisterDeviceList : public QObject
@@ -27,9 +26,10 @@ public:
     QVector<RegisterDeviceItem> items() const;
 
     bool setItemAt(int index, const RegisterDeviceItem &item);
+    void generateConf(bool randomID = true);
 
 signals:
-    void preItemInserted();
+    void preItemInserted(int index);
     void postItemInserted();
 
     void preItemRemoved(int index);
@@ -39,6 +39,7 @@ public slots:
     void insertItem();
     void removeItem(int index);
     bool checkNewDeviceID();
+    QString getThisID() const;
 
     void readDeviceItems();
     void writeDeviceItems();
@@ -46,6 +47,7 @@ public slots:
 private:
     QVector<RegisterDeviceItem> deviceItems;
     QFile configFile;
+    QString thisID;
 };
 
 #endif // REGISTER_DEVICE_LIST_HPP

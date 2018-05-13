@@ -1,8 +1,6 @@
 #include "register_device_model.hpp"
 #include "register_device_list.hpp"
 
-#include <QDebug>
-
 RegisterDeviceModel::RegisterDeviceModel(QObject *parent)
     : QAbstractListModel(parent)
     , deviceList(nullptr)
@@ -17,8 +15,6 @@ RegisterDeviceModel::~RegisterDeviceModel()
 
 int RegisterDeviceModel::rowCount(const QModelIndex &parent) const
 {
-    // For list models only the root node (an invalid parent) should return the list's size. For all
-    // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
     if (parent.isValid() || !deviceList)
         return 0;
 
@@ -41,8 +37,9 @@ QVariant RegisterDeviceModel::data(const QModelIndex &index, int role) const
             return QVariant(item.seq);
         case ButtonTextRole:
             return QVariant(item.buttonText);
+        default:
+            return QVariant();
     }
-    return QVariant();
 }
 
 bool RegisterDeviceModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -93,11 +90,6 @@ QHash<int, QByteArray> RegisterDeviceModel::roleNames() const
     return names;
 }
 
-RegisterDeviceList *RegisterDeviceModel::getDeviceList() const
-{
-    return deviceList;
-}
-
 void RegisterDeviceModel::setDeviceList(RegisterDeviceList *value)
 {
     beginResetModel();
@@ -109,8 +101,8 @@ void RegisterDeviceModel::setDeviceList(RegisterDeviceList *value)
 
     if (deviceList)
     {
-        connect(deviceList, &RegisterDeviceList::preItemInserted, this, [=]() {
-            beginInsertRows(QModelIndex(), 1, 1);
+        connect(deviceList, &RegisterDeviceList::preItemInserted, this, [=](int index) {
+            beginInsertRows(QModelIndex(), index, index);
         });
 
         connect(deviceList, &RegisterDeviceList::postItemInserted, this, [=]() {

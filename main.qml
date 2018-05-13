@@ -31,7 +31,6 @@ ApplicationWindow {
                 sender.disconnectFromReceiver();
                 receiver.stopServer();
                 window.pop(null)
-                saveFile()
             }
         }
     }
