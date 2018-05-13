@@ -17,14 +17,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 HEADERS += \
     modules/communications/receiver.hpp \
     modules/communications/sender.hpp \
-    modules/qml/register_device.hpp \
-    modules/qml/register_device_model.hpp
+    modules/qml/register_device_model.hpp \
+    modules/qml/register_device_list.hpp
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
     modules/communications/sender.cpp \
-    modules/qml/register_device.cpp \
-    modules/qml/register_device_model.cpp
+    modules/qml/register_device_model.cpp \
+    modules/qml/register_device_list.cpp
 
 RESOURCES += qml.qrc
 

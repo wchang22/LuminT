@@ -8,7 +8,7 @@ class Sender : public QObject
 {
     Q_OBJECT
 public:
-    Sender();
+    explicit Sender(QObject *parent = nullptr);
     ~Sender();
 
     enum class ClientState : int

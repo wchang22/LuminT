@@ -13,14 +13,16 @@ const int PORT = 4002;
 // Constructor/Destructor
 //-----------------------------------------------------------------------------
 
-Sender::Sender()
+Sender::Sender(QObject *parent)
+    : QObject(parent)
+    , clientSocket()
+    , clientState(ClientState::DISCONNECTED)
 {
     connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
-    connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-            this, SLOT(error(QAbstractSocket::SocketError)));
+    connect(&clientSocket,
+            qOverload<QAbstractSocket::SocketError>(&QAbstractSocket::error),
+            this, &Sender::error);
     connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
-
-    clientState = ClientState::DISCONNECTED;
 }
 
 Sender::~Sender()

@@ -8,8 +8,6 @@ Page {
     id: registerPage
     objectName: "registerPage"
 
-    signal registerButtonClicked()
-
     ColumnLayout {
         id: columnLayout
         spacing: 10
@@ -26,33 +24,57 @@ Page {
             font.pointSize: 50
         }
 
+        Label {
+            id: invalidID
+            color: "#e00000"
+            text: qsTr("*Invalid Device ID")
+            font.bold: true
+            font.family: "Segoe UI"
+            Layout.columnSpan: 1
+            Layout.rowSpan: 1
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            font.pointSize: 15
+            visible: false;
+        }
+
         ListView {
             id: listView
             boundsBehavior: Flickable.DragAndOvershootBounds
+            ScrollBar.vertical: ScrollBar {
+                width: 5
+            }
             Layout.fillHeight: true
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             spacing: 5
             clip: true
             delegate: RowLayout {
-                width: 470
+                width: 350
                 layoutDirection: Qt.LeftToRight
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 spacing: 5
                 TextField {
+                    id: textField
                     font.pointSize: 15
-                    placeholderText: "Add Device ID"
+                    placeholderText: "Add 8-digit Device ID"
                     text: deviceID
+                    echoMode: TextInput.Normal
                     Layout.preferredWidth: 360
                     Layout.preferredHeight: 40
                     Layout.fillWidth: true
+                    maximumLength: 8
+                    selectByMouse: true
                     readOnly: readOnlyStatus
+                    onEditingFinished: deviceID = text
+                    validator: RegExpValidator {
+                        regExp: /[\da-z]*/
+                    }
                 }
 
                 Button {
+                    property int sequence: seq
                     id: registerButton
-                    objectName: "registerButton"
                     width: 50
                     height: 40
                     text: buttonText
@@ -63,28 +85,25 @@ Page {
                     Layout.preferredWidth: 50
                     font.pointSize: 20
                     font.bold: false
-                    onClicked: registerButtonClicked()
+                    onClicked: {
+                        if (this.sequence !== 0)
+                            registerDeviceList.removeItem(this.sequence)
+                        else if (registerDeviceList.checkNewDeviceID())
+                        {
+                            registerDeviceList.insertItem()
+                            textField.text = ""
+                            invalidID.visible = false
+                        }
+                        else
+                            invalidID.visible = true
+                    }
                 }
 
             }
             model: RegisterDeviceModel {
-
+                deviceList: registerDeviceList
+                Component.onCompleted: registerDeviceList.readDeviceItems()
             }
-
-//            model: ListModel {
-//                id: listModel
-//                ListElement {
-//                    deviceID: ""
-//                    readOnlyStatus: false
-//                    buttonText: "+"
-//                }
-//                ListElement {
-//                    textFieldID: "1"
-//                    deviceID: "123456"
-//                    readOnlyStatus: true
-//                    buttonText: "\u2013"
-//                }
-//            }
         }
 
     }

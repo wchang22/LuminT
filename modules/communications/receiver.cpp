@@ -14,12 +14,13 @@ const int PORT = 4002;
 //-----------------------------------------------------------------------------
 
 Receiver::Receiver()
+    : server()
+    , serverSocket(nullptr)
+    , serverState(ServerState::DISCONNECTED)
 {
     connect(&server, &QTcpServer::newConnection,
             this, &Receiver::connectionReceived);
     server.setMaxPendingConnections(1);
-    serverSocket = nullptr;
-    serverState = ServerState::DISCONNECTED;
 }
 
 Receiver::~Receiver()
@@ -27,7 +28,7 @@ Receiver::~Receiver()
     if (server.isListening())
         server.close();
 
-    if (serverSocket != nullptr)
+    if (!serverSocket)
     {
         serverSocket->deleteLater();
         serverSocket = nullptr;
@@ -64,6 +65,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
         delete serverSocket;
         return;
     }
+
     QSslCertificate cert = QSslCertificate(certFile.readAll());
     QSslKey key = QSslKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
 

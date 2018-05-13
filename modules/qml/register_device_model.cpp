@@ -1,57 +1,72 @@
 #include "register_device_model.hpp"
+#include "register_device_list.hpp"
+
+#include <QDebug>
 
 RegisterDeviceModel::RegisterDeviceModel(QObject *parent)
     : QAbstractListModel(parent)
-{
-}
-
-QVariant RegisterDeviceModel::headerData(int section, Qt::Orientation orientation, int role) const
+    , deviceList(nullptr)
 {
 
 }
 
-bool RegisterDeviceModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+RegisterDeviceModel::~RegisterDeviceModel()
 {
-    if (value != headerData(section, orientation, role)) {
-        // FIXME: Implement me!
-        emit headerDataChanged(orientation, section, section);
-        return true;
-    }
-    return false;
+    deviceList->writeDeviceItems();
 }
 
 int RegisterDeviceModel::rowCount(const QModelIndex &parent) const
 {
     // For list models only the root node (an invalid parent) should return the list's size. For all
     // other (valid) parents, rowCount() should return 0 so that it does not become a tree model.
-    if (parent.isValid())
+    if (parent.isValid() || !deviceList)
         return 0;
 
-    // FIXME: Implement me!
-    return 10;
+    return deviceList->items().size();
 }
 
 QVariant RegisterDeviceModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid())
+    if (!index.isValid() || !deviceList)
         return QVariant();
 
-    // FIXME: Implement me!
+    const RegisterDeviceItem item = deviceList->items().at(index.row());
+
     switch (role) {
         case DeviceIDRole:
-            return QVariant(QStringLiteral("12345678"));
+            return QVariant(item.deviceID);
         case ReadOnlyStatusRole:
-            return QVariant(true);
+            return QVariant(item.readOnlyStatus);
+        case SeqRole:
+            return QVariant(item.seq);
         case ButtonTextRole:
-            return QVariant("-");
+            return QVariant(item.buttonText);
     }
     return QVariant();
 }
 
 bool RegisterDeviceModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if (data(index, role) != value) {
-        // FIXME: Implement me!
+    if (!deviceList)
+        return false;
+
+    RegisterDeviceItem item = deviceList->items().at(index.row());
+
+    switch (role) {
+        case DeviceIDRole:
+            item.deviceID = value.toString();
+            break;
+        case ReadOnlyStatusRole:
+            item.readOnlyStatus = value.toBool();
+            break;
+        case SeqRole:
+            item.seq = value.toInt();
+            break;
+        case ButtonTextRole:
+            item.buttonText = value.toString();
+    }
+
+    if (deviceList->setItemAt(index.row(), item)) {
         emit dataChanged(index, index, QVector<int>() << role);
         return true;
     }
@@ -63,28 +78,53 @@ Qt::ItemFlags RegisterDeviceModel::flags(const QModelIndex &index) const
     if (!index.isValid())
         return Qt::NoItemFlags;
 
-    return Qt::ItemIsEditable; // FIXME: Implement me!
-}
-
-bool RegisterDeviceModel::insertRows(int row, int count, const QModelIndex &parent)
-{
-    beginInsertRows(parent, row, row + count - 1);
-    // FIXME: Implement me!
-    endInsertRows();
-}
-
-bool RegisterDeviceModel::removeRows(int row, int count, const QModelIndex &parent)
-{
-    beginRemoveRows(parent, row, row + count - 1);
-    // FIXME: Implement me!
-    endRemoveRows();
+    return Qt::ItemIsEditable;
 }
 
 QHash<int, QByteArray> RegisterDeviceModel::roleNames() const
 {
     QHash<int, QByteArray> names;
+
     names[DeviceIDRole] = "deviceID";
     names[ReadOnlyStatusRole] = "readOnlyStatus";
+    names[SeqRole] = "seq";
     names[ButtonTextRole] = "buttonText";
+
     return names;
+}
+
+RegisterDeviceList *RegisterDeviceModel::getDeviceList() const
+{
+    return deviceList;
+}
+
+void RegisterDeviceModel::setDeviceList(RegisterDeviceList *value)
+{
+    beginResetModel();
+
+    if (deviceList)
+        deviceList->disconnect(this);
+
+    deviceList = value;
+
+    if (deviceList)
+    {
+        connect(deviceList, &RegisterDeviceList::preItemInserted, this, [=]() {
+            beginInsertRows(QModelIndex(), 1, 1);
+        });
+
+        connect(deviceList, &RegisterDeviceList::postItemInserted, this, [=]() {
+            endInsertRows();
+        });
+
+        connect(deviceList, &RegisterDeviceList::preItemRemoved, this, [=](int index) {
+            beginRemoveRows(QModelIndex(), index, index);
+        });
+
+        connect(deviceList, &RegisterDeviceList::postItemRemoved, this, [=]() {
+            endRemoveRows();
+        });
+    }
+
+    endResetModel();
 }
