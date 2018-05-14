@@ -25,12 +25,8 @@ Receiver::Receiver()
 
 Receiver::~Receiver()
 {
-
     if (server.isListening())
         server.close();
-
-    if (!serverSocket)
-        delete serverSocket;
 }
 
 //-----------------------------------------------------------------------------
@@ -48,7 +44,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
     server.close();
 
-    serverSocket = new QSslSocket();
+    serverSocket = new QSslSocket(this);
 
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
     {

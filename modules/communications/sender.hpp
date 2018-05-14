@@ -11,7 +11,7 @@ public:
     explicit Sender(QObject *parent = nullptr);
     ~Sender();
 
-    enum class ClientState : int
+    enum class ClientState : uint8_t
     {
         DISCONNECTED        = 0,
         CONNECTING          = 1,

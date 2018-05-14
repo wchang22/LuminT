@@ -11,7 +11,7 @@ public:
     Receiver();
     ~Receiver();
 
-    enum class ServerState : int
+    enum class ServerState : uint8_t
     {
         DISCONNECTED        = 0,
         CONNECTING          = 1,

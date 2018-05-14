@@ -18,13 +18,16 @@ HEADERS += \
     modules/communications/receiver.hpp \
     modules/communications/sender.hpp \
     modules/qml/register_device_model.hpp \
-    modules/qml/register_device_list.hpp
+    modules/qml/register_device_list.hpp \
+    modules/message/message.hpp \
+    modules/message/messenger.hpp
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
     modules/communications/sender.cpp \
     modules/qml/register_device_model.cpp \
-    modules/qml/register_device_list.cpp
+    modules/qml/register_device_list.cpp \
+    modules/message/messenger.cpp
 
 RESOURCES += qml.qrc
 
