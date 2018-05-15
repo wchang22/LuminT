@@ -1,10 +1,10 @@
 #include "messenger.hpp"
 #include "request_message.hpp"
+#include "info_message.hpp"
 
 const int MESSAGE_ID_SIZE = 1;
 const int MESSAGE_SIZE_SIZE = 1;
 const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_SIZE + MESSAGE_SIZE_SIZE;
-
 
 Messenger::Messenger()
 {
@@ -52,6 +52,8 @@ std::shared_ptr<Message> Messenger::retrieveMessage()
 
     switch (static_cast<Message::MessageID>(messageData.front()))
     {
+        case Message::MessageID::INFO:
+            return std::make_shared<InfoMessage>(message);
         case Message::MessageID::REQUEST:
             return std::make_shared<RequestMessage>(message);
         default:

@@ -74,6 +74,11 @@ void Sender::setup()
     clientSocket.ignoreSslErrors(errorsToIgnore);
 }
 
+void Sender::setThisID(QString thisID)
+{
+    this->thisID = thisID;
+}
+
 QString Sender::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
@@ -126,8 +131,11 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
     switch (request->request)
     {
         case RequestMessage::Request::DEVICE_ID:
-            qDebug() << "device id request received";
+        {
+            InfoMessage info(InfoMessage::InfoType::DEVICE_ID, stringToByteVector(thisID));
+            messenger.sendMessage(info);
             break;
+        }
         default:
             break;
     }

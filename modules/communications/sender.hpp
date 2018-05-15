@@ -6,6 +6,7 @@
 
 #include "modules/message/messenger.hpp"
 #include "modules/message/request_message.hpp"
+#include "modules/message/info_message.hpp"
 
 class Sender : public QObject
 {
@@ -21,6 +22,7 @@ public:
         ENCRYPTED           = 2,
     };
 
+
 signals:
     void connected();
     void disconnected();
@@ -31,6 +33,7 @@ public slots:
     void connectToReceiver();
     void disconnectFromReceiver();
     void setup();
+    void setThisID(QString thisID);
 
 private slots:
     void ready();
@@ -46,6 +49,8 @@ private:
     ClientState clientState;
 
     Messenger messenger;
+
+    QString thisID;
 };
 
 #endif // SENDER_HPP

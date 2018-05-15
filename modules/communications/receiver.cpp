@@ -85,6 +85,8 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
             this, &Receiver::handleReadyRead);
     connect(serverSocket, &QSslSocket::disconnected,
             this, &Receiver::stopped);
+    connect(this, &Receiver::receivedInfo,
+            this, &Receiver::handleInfo);
 
     serverSocket->startServerEncryption();
 }
@@ -144,6 +146,8 @@ void Receiver::stopServer()
                this, &Receiver::handleReadyRead);
     disconnect(serverSocket, &QSslSocket::disconnected,
                this, &Receiver::stopped);
+    disconnect(this, &Receiver::receivedInfo,
+               this, &Receiver::handleInfo);
 
     serverSocket->abort();
 }
@@ -154,6 +158,28 @@ void Receiver::stopServer()
 
 void Receiver::handleReadyRead()
 {
+    if (!messenger.readMessage())
+        return;
 
+    switch (messenger.messageType())
+    {
+        case Message::MessageID::INFO:
+            emit receivedInfo(std::static_pointer_cast<InfoMessage>(
+                                 messenger.retrieveMessage()));
+            break;
+        default:
+            break;
+    }
+}
+
+void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
+{
+    switch (info->infoType) {
+    case InfoMessage::InfoType::DEVICE_ID:
+        qDebug() << byteVectorToString(info->info);
+        break;
+    default:
+        break;
+    }
 }
 

@@ -5,6 +5,7 @@
 #include <QSslSocket>
 
 #include "modules/message/messenger.hpp"
+#include "modules/message/info_message.hpp"
 
 class Receiver : public QTcpServer
 {
@@ -25,6 +26,8 @@ signals:
     void connected();
     void disconnected();
 
+    void receivedInfo(std::shared_ptr<InfoMessage> info);
+
 public slots:
      void startServer();
      void stopServer();
@@ -35,6 +38,7 @@ private slots:
      void ready();
      void stopped();
      void handleReadyRead();
+     void handleInfo(std::shared_ptr<InfoMessage> info);
 
 private:
     QTcpServer server;

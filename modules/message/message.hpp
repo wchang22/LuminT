@@ -9,10 +9,10 @@ public:
 
     enum class MessageID : int
     {
-        SEND            = 1,
+        INVALID         = -1,
+        INFO            = 1,
         REQUEST         = 2,
         ACKNOWLEDGE     = 3,
-        INVALID         = -1,
     };
 
     virtual ~Message() {}

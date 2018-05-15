@@ -14,7 +14,7 @@ public:
     };
 
     RequestMessage(Request request);
-    RequestMessage(QVector<uint8_t> request);
+    RequestMessage(QVector<uint8_t> requestVector);
 
     ~RequestMessage();
 

@@ -114,10 +114,10 @@ Page {
                 Component.onCompleted: {
                     thisIDLabel.text = qsTr("Your device ID: " +
                                             registerDeviceList.getThisID())
+                    sender.setThisID(registerDeviceList.getThisID())
                 }
             }
         }
-
     }
 
 }
