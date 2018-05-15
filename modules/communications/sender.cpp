@@ -22,6 +22,8 @@ Sender::Sender(QObject *parent)
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(error(QAbstractSocket::SocketError)));
     connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
+    connect(&clientSocket, &QSslSocket::readyRead, this, &Sender::handleReadyRead);
+    connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
 }
 
 Sender::~Sender()
@@ -37,6 +39,9 @@ Sender::~Sender()
 void Sender::ready()
 {
     clientState = ClientState::ENCRYPTED;
+
+    messenger.setDevice(&clientSocket);
+
     emit connected();
 }
 
@@ -94,4 +99,36 @@ void Sender::connectToReceiver()
 {
     clientSocket.connectToHostEncrypted(getIPAddress(), PORT);
     clientState = ClientState::CONNECTING;
+}
+
+//-----------------------------------------------------------------------------
+// Read/Write
+//-----------------------------------------------------------------------------
+
+void Sender::handleReadyRead()
+{
+    if (!messenger.readMessage())
+        return;
+
+    switch (messenger.messageType())
+    {
+        case Message::MessageID::REQUEST:
+            emit receivedRequest(std::static_pointer_cast<RequestMessage>(
+                                 messenger.retrieveMessage()));
+            break;
+        default:
+            break;
+    }
+}
+
+void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
+{
+    switch (request->request)
+    {
+        case RequestMessage::Request::DEVICE_ID:
+            qDebug() << "device id request received";
+            break;
+        default:
+            break;
+    }
 }

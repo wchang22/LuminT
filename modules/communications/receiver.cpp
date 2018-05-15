@@ -2,6 +2,7 @@
 #include <QFile>
 
 #include "receiver.hpp"
+#include "modules/message/request_message.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -17,6 +18,7 @@ Receiver::Receiver()
     : server()
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
+    , messenger()
 {
     connect(&server, &QTcpServer::newConnection,
             this, &Receiver::connectionReceived);
@@ -78,7 +80,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     addPendingConnection(serverSocket);
 
     connect(serverSocket, &QSslSocket::encrypted,
-            this, &Receiver::connected);
+            this, &Receiver::ready);
     connect(serverSocket, &QSslSocket::readyRead,
             this, &Receiver::handleReadyRead);
     connect(serverSocket, &QSslSocket::disconnected,
@@ -90,6 +92,13 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 void Receiver::ready()
 {
     serverState = ServerState::ENCRYPTED;
+
+    messenger.setDevice(serverSocket);
+
+    RequestMessage requestID(RequestMessage::Request::DEVICE_ID);
+
+    messenger.sendMessage(requestID);
+
     emit connected();
 }
 

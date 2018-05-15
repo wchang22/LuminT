@@ -4,6 +4,8 @@
 #include <QTcpServer>
 #include <QSslSocket>
 
+#include "modules/message/messenger.hpp"
+
 class Receiver : public QTcpServer
 {
     Q_OBJECT
@@ -38,6 +40,8 @@ private:
     QTcpServer server;
     QSslSocket *serverSocket;
     ServerState serverState;
+
+    Messenger messenger;
 };
 
 #endif // RECEIVER_HPP

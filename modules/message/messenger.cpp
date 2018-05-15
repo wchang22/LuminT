@@ -1,30 +1,32 @@
 #include "messenger.hpp"
+#include "request_message.hpp"
 
-const int MESSAGE_CONTENT_OFFSET = 2;
 const int MESSAGE_ID_SIZE = 1;
-const int MESSAGE_LENGTH_SIZE = 1;
+const int MESSAGE_SIZE_SIZE = 1;
+const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_SIZE + MESSAGE_SIZE_SIZE;
+
 
 Messenger::Messenger()
 {
 
 }
 
-void Messenger::setDevice(QSslSocket &device)
+void Messenger::setDevice(QSslSocket *device)
 {
-    dataStream.setDevice(&device);
+    dataStream.setDevice(device);
 }
 
 bool Messenger::frame(Message &message)
 {
     messageData.clear();
-    messageData = message.serialize();
+    messageData.append(message.serialize());
 
     int messageSize = messageData.size();
     if (messageSize <= 0 || messageSize > 255)
         return false;
 
-    messageData.prepend(static_cast<char>(messageSize));
-    messageData.prepend(static_cast<char>(message.type()));
+    messageData.prepend(static_cast<uint8_t>(messageSize));
+    messageData.prepend(static_cast<uint8_t>(message.type()));
 
     return true;
 }
@@ -34,7 +36,8 @@ bool Messenger::sendMessage(Message &message)
     if (!frame(message))
         return false;
 
-    int bytesWritten = dataStream.writeRawData(messageData.constData(),
+    int bytesWritten = dataStream.writeRawData(reinterpret_cast<const char*>(
+                                               messageData.constData()),
                                                messageData.size());
 
     if (bytesWritten != messageData.size())
@@ -45,16 +48,12 @@ bool Messenger::sendMessage(Message &message)
 
 std::shared_ptr<Message> Messenger::retrieveMessage()
 {
-    QByteArray message(messageData.mid(MESSAGE_CONTENT_OFFSET));
+    QVector<uint8_t> message(messageData.mid(MESSAGE_CONTENT_OFFSET));
 
-    switch (static_cast<Message::MessageID>(messageData.at(0)))
+    switch (static_cast<Message::MessageID>(messageData.front()))
     {
-        case Message::MessageID::SEND:
-            break;
         case Message::MessageID::REQUEST:
-            break;
-        case Message::MessageID::ACKNOWLEDGE:
-            break;
+            return std::make_shared<RequestMessage>(message);
         default:
             return nullptr;
     }
@@ -64,26 +63,29 @@ bool Messenger::readMessage()
 {
     messageData.clear();
 
-    QByteArray messageID, messageLength, messageContent;
+    QVector<uint8_t> messageID, messageSize, messageContent;
 
     dataStream.startTransaction();
 
-    if (dataStream.readRawData(messageID.data(), MESSAGE_ID_SIZE)
-        != MESSAGE_ID_SIZE)
+    messageID.resize(MESSAGE_ID_SIZE);
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()),
+                               MESSAGE_ID_SIZE) != MESSAGE_ID_SIZE)
         return false;
 
     messageData.append(messageID);
 
-    if (dataStream.readRawData(messageLength.data(), MESSAGE_LENGTH_SIZE)
-        != MESSAGE_LENGTH_SIZE)
+    messageSize.resize(MESSAGE_SIZE_SIZE);
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageSize.data()),
+                               MESSAGE_SIZE_SIZE) != MESSAGE_SIZE_SIZE)
         return false;
 
-    messageData.append(messageLength);
+    messageData.append(messageSize);
 
-    int messageSize = static_cast<int>(messageLength.at(0));
+    int messageContentSize = static_cast<int>(messageSize.front());
 
-    if (dataStream.readRawData(messageContent.data(), messageSize)
-        != messageSize)
+    messageContent.resize(messageContentSize);
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
+                               messageContentSize) != messageContentSize)
         return false;
 
     messageData.append(messageContent);
@@ -92,4 +94,12 @@ bool Messenger::readMessage()
         return false;
 
     return true;
+}
+
+Message::MessageID Messenger::messageType() const
+{
+    if (messageData.size() < MESSAGE_CONTENT_OFFSET)
+        return Message::MessageID::INVALID;
+
+    return static_cast<Message::MessageID>(messageData.front());
 }

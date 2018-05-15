@@ -1,24 +1,25 @@
 #ifndef MESSAGE_HPP
 #define MESSAGE_HPP
 
-#include <QByteArray>
+#include <QVector>
 
 class Message
 {
 public:
 
-    enum class MessageID : uint8_t
+    enum class MessageID : int
     {
-        SEND            = 0x01,
-        REQUEST         = 0x02,
-        ACKNOWLEDGE     = 0x03,
+        SEND            = 1,
+        REQUEST         = 2,
+        ACKNOWLEDGE     = 3,
+        INVALID         = -1,
     };
 
     virtual ~Message() {}
 
-    virtual MessageID type() = 0;
+    virtual MessageID type() const = 0;
 
-    virtual QByteArray serialize() = 0;
+    virtual QVector<uint8_t> serialize() = 0;
 };
 
 #endif // MESSAGE_HPP

@@ -20,14 +20,16 @@ HEADERS += \
     modules/qml/register_device_model.hpp \
     modules/qml/register_device_list.hpp \
     modules/message/message.hpp \
-    modules/message/messenger.hpp
+    modules/message/messenger.hpp \
+    modules/message/request_message.hpp
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
     modules/communications/sender.cpp \
     modules/qml/register_device_model.cpp \
     modules/qml/register_device_list.cpp \
-    modules/message/messenger.cpp
+    modules/message/messenger.cpp \
+    modules/message/request_message.cpp
 
 RESOURCES += qml.qrc
 

@@ -4,6 +4,9 @@
 #include <QObject>
 #include <QSslSocket>
 
+#include "modules/message/messenger.hpp"
+#include "modules/message/request_message.hpp"
+
 class Sender : public QObject
 {
     Q_OBJECT
@@ -22,6 +25,8 @@ signals:
     void connected();
     void disconnected();
 
+    void receivedRequest(std::shared_ptr<RequestMessage> request);
+
 public slots:
     void connectToReceiver();
     void disconnectFromReceiver();
@@ -31,12 +36,16 @@ private slots:
     void ready();
     void stopped();
     void error(QAbstractSocket::SocketError error);
+    void handleReadyRead();
+    void handleRequest(std::shared_ptr<RequestMessage> request);
 
 private:
     QString getIPAddress() const;
 
     QSslSocket clientSocket;
     ClientState clientState;
+
+    Messenger messenger;
 };
 
 #endif // SENDER_HPP
