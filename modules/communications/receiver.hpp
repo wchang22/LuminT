@@ -6,6 +6,7 @@
 
 #include "modules/message/messenger.hpp"
 #include "modules/message/info_message.hpp"
+#include "modules/qml/register_device_list.hpp"
 
 class Receiver : public QTcpServer
 {
@@ -21,6 +22,8 @@ public:
         ENCRYPTING          = 2,
         ENCRYPTED           = 3,
     };
+
+    void setup(RegisterDeviceList &registerDeviceList);
 
 signals:
     void connected();
@@ -41,9 +44,13 @@ private slots:
      void handleInfo(std::shared_ptr<InfoMessage> info);
 
 private:
+    void handleDeviceID(QString deviceID);
+
     QTcpServer server;
     QSslSocket *serverSocket;
     ServerState serverState;
+
+    RegisterDeviceList *registerDeviceList;
 
     Messenger messenger;
 };

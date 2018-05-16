@@ -10,14 +10,14 @@ ApplicationWindow {
     height: 480
     title: qsTr("LuminT") 
 
-    Sender {
-        id: sender
+    Connections {
+        target: sender
         onConnected: window.push(senderComp)
         onDisconnected: window.pop(null)
     }
 
-    Receiver {
-        id: receiver
+    Connections {
+        target: receiver
         onConnected: window.push(receiverComp)
         onDisconnected: window.pop(null)
     }

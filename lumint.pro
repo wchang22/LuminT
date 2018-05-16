@@ -22,7 +22,8 @@ HEADERS += \
     modules/message/message.hpp \
     modules/message/messenger.hpp \
     modules/message/request_message.hpp \
-    modules/message/info_message.hpp
+    modules/message/info_message.hpp \
+    modules/message/acknowledge_message.hpp
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
@@ -31,7 +32,8 @@ SOURCES += main.cpp \
     modules/qml/register_device_list.cpp \
     modules/message/messenger.cpp \
     modules/message/request_message.cpp \
-    modules/message/info_message.cpp
+    modules/message/info_message.cpp \
+    modules/message/acknowledge_message.cpp
 
 RESOURCES += qml.qrc
 

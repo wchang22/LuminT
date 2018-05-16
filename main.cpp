@@ -13,23 +13,39 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
 
+    // Disable Ssl warnings
     QLoggingCategory::setFilterRules("qt.network.ssl.warning=false");
 
-    qmlRegisterType<Receiver>("communications", 1, 0, "Receiver");
-    qmlRegisterType<Sender>("communications", 1, 0, "Sender");
-    qmlRegisterType<RegisterDeviceModel>("qml", 1, 0, "RegisterDeviceModel");
-    qmlRegisterUncreatableType<RegisterDeviceList>("qml", 1, 0,
-                                                   "RegisterDeviceList",
-           QStringLiteral("RegisterDeviceList should not be created in QML"));
+    // Create qml objects of main classes
+    qmlRegisterUncreatableType<Receiver>("communications", 1, 0, "Receiver",
+        QStringLiteral("Receiver should not be created in QML"));
 
+    qmlRegisterUncreatableType<Sender>("communications", 1, 0, "Sender",
+        QStringLiteral("Sender should not be created in QML"));
+
+    qmlRegisterUncreatableType<RegisterDeviceList>("qml", 1, 0, "RegisterDeviceList",
+        QStringLiteral("RegisterDeviceList should not be created in QML"));
+
+    qmlRegisterType<RegisterDeviceModel>("qml", 1, 0, "RegisterDeviceModel");
+
+    // Setup objects
     RegisterDeviceList registerDeviceList;
+    Sender sender;
+    Receiver receiver;
 
     registerDeviceList.generateConf();
     registerDeviceList.readDeviceItems();
+    sender.setup(registerDeviceList.getThisID());
 
+    receiver.setup(registerDeviceList);;
+
+    // Expose objects to qml
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(
                 QStringLiteral("registerDeviceList"), &registerDeviceList);
+    engine.rootContext()->setContextProperty(QStringLiteral("sender"), &sender);
+    engine.rootContext()->setContextProperty(QStringLiteral("receiver"), &receiver);
+
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;

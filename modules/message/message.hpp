@@ -7,9 +7,9 @@ class Message
 {
 public:
 
-    enum class MessageID : int
+    enum class MessageID : uint8_t
     {
-        INVALID         = -1,
+        INVALID         = 0,
         INFO            = 1,
         REQUEST         = 2,
         ACKNOWLEDGE     = 3,

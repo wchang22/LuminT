@@ -7,6 +7,7 @@
 #include "modules/message/messenger.hpp"
 #include "modules/message/request_message.hpp"
 #include "modules/message/info_message.hpp"
+#include "modules/message/acknowledge_message.hpp"
 
 class Sender : public QObject
 {
@@ -22,18 +23,18 @@ public:
         ENCRYPTED           = 2,
     };
 
+    void setup(QString thisID);
 
 signals:
     void connected();
     void disconnected();
 
     void receivedRequest(std::shared_ptr<RequestMessage> request);
+    void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
 public slots:
     void connectToReceiver();
     void disconnectFromReceiver();
-    void setup();
-    void setThisID(QString thisID);
 
 private slots:
     void ready();
@@ -41,6 +42,7 @@ private slots:
     void error(QAbstractSocket::SocketError error);
     void handleReadyRead();
     void handleRequest(std::shared_ptr<RequestMessage> request);
+    void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
 private:
     QString getIPAddress() const;

@@ -3,6 +3,7 @@
 
 #include "receiver.hpp"
 #include "modules/message/request_message.hpp"
+#include "modules/message/acknowledge_message.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -18,6 +19,7 @@ Receiver::Receiver()
     : server()
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
+    , registerDeviceList(nullptr)
     , messenger()
 {
     connect(&server, &QTcpServer::newConnection,
@@ -100,8 +102,6 @@ void Receiver::ready()
     RequestMessage requestID(RequestMessage::Request::DEVICE_ID);
 
     messenger.sendMessage(requestID);
-
-    emit connected();
 }
 
 void Receiver::stopped()
@@ -112,6 +112,11 @@ void Receiver::stopped()
 //-----------------------------------------------------------------------------
 // Connection Methods
 //-----------------------------------------------------------------------------
+
+void Receiver::setup(RegisterDeviceList &registerDeviceList)
+{
+    this->registerDeviceList = &registerDeviceList;
+}
 
 void Receiver::startServer()
 {
@@ -175,11 +180,32 @@ void Receiver::handleReadyRead()
 void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
 {
     switch (info->infoType) {
-    case InfoMessage::InfoType::DEVICE_ID:
-        qDebug() << byteVectorToString(info->info);
-        break;
-    default:
-        break;
+        case InfoMessage::InfoType::DEVICE_ID:
+        {
+            handleDeviceID(byteVectorToString(info->info));
+            break;
+        }
+        default:
+            break;
     }
+}
+
+void Receiver::handleDeviceID(QString deviceID)
+{
+    int deviceItemsSize = registerDeviceList->items().size();
+
+    for (int i = 1; i < deviceItemsSize; i++)
+    {
+        if (registerDeviceList->items().at(i).deviceID == deviceID)
+        {
+            AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_ID_OK);
+            messenger.sendMessage(ack);
+            emit connected();
+            return;
+        }
+    }
+
+    AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_ID_INVALID);
+    messenger.sendMessage(ack);
 }
 

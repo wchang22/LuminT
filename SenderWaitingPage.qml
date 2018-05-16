@@ -6,7 +6,6 @@ Page {
     id: senderWaitingPage
     objectName: "senderWaitingPage"
     Component.onCompleted: {
-        sender.setup()
         sender.connectToReceiver()
     }
 

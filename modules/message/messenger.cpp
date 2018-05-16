@@ -1,6 +1,7 @@
 #include "messenger.hpp"
 #include "request_message.hpp"
 #include "info_message.hpp"
+#include "acknowledge_message.hpp"
 
 const int MESSAGE_ID_SIZE = 1;
 const int MESSAGE_SIZE_SIZE = 1;
@@ -56,6 +57,8 @@ std::shared_ptr<Message> Messenger::retrieveMessage()
             return std::make_shared<InfoMessage>(message);
         case Message::MessageID::REQUEST:
             return std::make_shared<RequestMessage>(message);
+        case Message::MessageID::ACKNOWLEDGE:
+            return std::make_shared<AcknowledgeMessage>(message);
         default:
             return nullptr;
     }

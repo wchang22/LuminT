@@ -15,13 +15,13 @@ Page {
 
         Label {
             id: label
-            text: qsTr("Add Devices")
+            text: qsTr("Add Sender Devices")
             font.bold: true
             font.family: "Segoe UI"
             Layout.columnSpan: 1
             Layout.rowSpan: 1
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            font.pointSize: 40
+            font.pointSize: 30
         }
 
         Label {
@@ -114,7 +114,6 @@ Page {
                 Component.onCompleted: {
                     thisIDLabel.text = qsTr("Your device ID: " +
                                             registerDeviceList.getThisID())
-                    sender.setThisID(registerDeviceList.getThisID())
                 }
             }
         }

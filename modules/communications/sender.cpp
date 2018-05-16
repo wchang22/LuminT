@@ -2,6 +2,7 @@
 #include <QNetworkInterface>
 
 #include "sender.hpp"
+#include "modules/qml/register_device_list.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -17,6 +18,8 @@ Sender::Sender(QObject *parent)
     : QObject(parent)
     , clientSocket()
     , clientState(ClientState::DISCONNECTED)
+    , messenger()
+    , thisID("")
 {
     connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
@@ -24,6 +27,7 @@ Sender::Sender(QObject *parent)
     connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
     connect(&clientSocket, &QSslSocket::readyRead, this, &Sender::handleReadyRead);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
+    connect(this, &Sender::receivedAcknowledge, this, &Sender::handleAcknowledge);
 }
 
 Sender::~Sender()
@@ -41,8 +45,6 @@ void Sender::ready()
     clientState = ClientState::ENCRYPTED;
 
     messenger.setDevice(&clientSocket);
-
-    emit connected();
 }
 
 void Sender::stopped()
@@ -64,7 +66,7 @@ void Sender::error(QAbstractSocket::SocketError error)
 // Connection Methods
 //-----------------------------------------------------------------------------
 
-void Sender::setup()
+void Sender::setup(QString thisID)
 {
     clientSocket.addCaCertificates(QStringLiteral("rootCA.pem"));
 
@@ -72,10 +74,7 @@ void Sender::setup()
     auto serverCert = QSslCertificate::fromPath(QStringLiteral("server.pem"));
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
-}
 
-void Sender::setThisID(QString thisID)
-{
     this->thisID = thisID;
 }
 
@@ -121,6 +120,10 @@ void Sender::handleReadyRead()
             emit receivedRequest(std::static_pointer_cast<RequestMessage>(
                                  messenger.retrieveMessage()));
             break;
+        case Message::MessageID::ACKNOWLEDGE:
+            emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
+                                     messenger.retrieveMessage()));
+            break;
         default:
             break;
     }
@@ -139,4 +142,10 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         default:
             break;
     }
+}
+
+void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
+{
+    if (ack->ack == AcknowledgeMessage::Acknowledge::DEVICE_ID_OK)
+        emit connected();
 }

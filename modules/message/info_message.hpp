@@ -6,7 +6,7 @@
 class InfoMessage : public Message
 {
 public:
-    enum class InfoType : int
+    enum class InfoType : uint8_t
     {
         DEVICE_ID       = 1,
         MESSAGE_TYPE    = 2,

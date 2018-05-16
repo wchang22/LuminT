@@ -145,4 +145,3 @@ QString RegisterDeviceList::getThisID() const
 {
     return thisID;
 }
-
