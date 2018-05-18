@@ -32,7 +32,7 @@ Sender::Sender(QObject *parent)
 
 Sender::~Sender()
 {
-    if (clientState != ClientState::DISCONNECTED)
+    if (clientSocket.isOpen())
         clientSocket.abort();
 }
 

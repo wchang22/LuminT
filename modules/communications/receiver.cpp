@@ -29,7 +29,7 @@ Receiver::~Receiver()
     if (this->isListening())
         this->close();
 
-    if (serverSocket->isOpen())
+    if (serverSocket && serverSocket->isOpen())
         serverSocket->abort();
 }
 
