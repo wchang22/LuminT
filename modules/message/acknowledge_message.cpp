@@ -5,7 +5,7 @@ AcknowledgeMessage::AcknowledgeMessage(Acknowledge ack)
     this->ack = ack;
 }
 
-AcknowledgeMessage::AcknowledgeMessage(QVector<uint8_t> ackVector)
+AcknowledgeMessage::AcknowledgeMessage(QVector<uint8_t> &ackVector)
 {
     this->ack = static_cast<Acknowledge>(ackVector.front());
 }

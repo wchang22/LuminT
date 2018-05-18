@@ -14,7 +14,7 @@ public:
     };
 
     InfoMessage(InfoType infoType, QVector<uint8_t> info);
-    InfoMessage(QVector<uint8_t> infoVector);
+    InfoMessage(QVector<uint8_t> &infoVector);
 
     ~InfoMessage();
 

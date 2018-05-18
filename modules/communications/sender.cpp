@@ -21,9 +21,9 @@ Sender::Sender(QObject *parent)
     , messenger()
     , thisID("")
 {
-    connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(error(QAbstractSocket::SocketError)));
+    connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
     connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
     connect(&clientSocket, &QSslSocket::readyRead, this, &Sender::handleReadyRead);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
@@ -43,21 +43,20 @@ Sender::~Sender()
 void Sender::ready()
 {
     clientState = ClientState::ENCRYPTED;
-
     messenger.setDevice(&clientSocket);
 }
 
 void Sender::stopped()
 {
+    if (clientState == ClientState::RECONNECTING)
+        return;
+
     clientState = ClientState::DISCONNECTED;
     emit disconnected();
 }
 
 void Sender::error(QAbstractSocket::SocketError error)
 {
-    if (clientState != ClientState::CONNECTING)
-        return;
-
     if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
         connectToReceiver();
 }
@@ -147,5 +146,12 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
 void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
 {
     if (ack->ack == AcknowledgeMessage::Acknowledge::DEVICE_ID_OK)
+    {
         emit connected();
+        return;
+    }
+
+    clientState = ClientState::RECONNECTING;
+    clientSocket.abort();
+    connectToReceiver();
 }

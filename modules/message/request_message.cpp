@@ -5,7 +5,7 @@ RequestMessage::RequestMessage(Request request)
     this->request = request;
 }
 
-RequestMessage::RequestMessage(QVector<uint8_t> requestVector)
+RequestMessage::RequestMessage(QVector<uint8_t> &requestVector)
 {
     this->request = static_cast<Request>(requestVector.front());
 }

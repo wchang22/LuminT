@@ -11,11 +11,10 @@ public:
     {
         ERROR               = 0,
         DEVICE_ID_OK        = 1,
-        DEVICE_ID_INVALID   = 2,
     };
 
     AcknowledgeMessage(Acknowledge ack);
-    AcknowledgeMessage(QVector<uint8_t> ackVector);
+    AcknowledgeMessage(QVector<uint8_t> &ackVector);
 
     ~AcknowledgeMessage();
 

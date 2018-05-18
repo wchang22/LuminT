@@ -12,7 +12,7 @@ class Receiver : public QTcpServer
 {
     Q_OBJECT
 public:
-    Receiver();
+    Receiver(QObject *parent = nullptr);
     ~Receiver();
 
     enum class ServerState : uint8_t
@@ -21,14 +21,17 @@ public:
         CONNECTING          = 1,
         ENCRYPTING          = 2,
         ENCRYPTED           = 3,
+        RECONNECTING        = 4,
     };
 
     void setup(RegisterDeviceList &registerDeviceList);
 
+protected:
+    void incomingConnection(qintptr serverSocketDescriptor) override;
+
 signals:
     void connected();
     void disconnected();
-
     void receivedInfo(std::shared_ptr<InfoMessage> info);
 
 public slots:
@@ -36,8 +39,6 @@ public slots:
      void stopServer();
 
 private slots:
-     void incomingConnection(qintptr socketDescriptor);
-     void connectionReceived();
      void ready();
      void stopped();
      void handleReadyRead();
@@ -46,7 +47,6 @@ private slots:
 private:
     void handleDeviceID(QString deviceID);
 
-    QTcpServer server;
     QSslSocket *serverSocket;
     ServerState serverState;
 

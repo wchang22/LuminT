@@ -6,7 +6,7 @@ InfoMessage::InfoMessage(InfoType infoType, QVector<uint8_t> info)
     this->info.append(info);
 }
 
-InfoMessage::InfoMessage(QVector<uint8_t> infoVector)
+InfoMessage::InfoMessage(QVector<uint8_t> &infoVector)
 {
     this->infoType = static_cast<InfoType>(infoVector.front());
     this->info = infoVector.mid(1);

@@ -21,6 +21,7 @@ public:
         DISCONNECTED        = 0,
         CONNECTING          = 1,
         ENCRYPTED           = 2,
+        RECONNECTING        = 3,
     };
 
     void setup(QString thisID);

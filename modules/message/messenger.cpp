@@ -22,7 +22,7 @@ bool Messenger::frame(Message &message)
     messageData.clear();
     messageData.append(message.serialize());
 
-    int messageSize = messageData.size();
+    const int messageSize = messageData.size();
     if (messageSize <= 0 || messageSize > 255)
         return false;
 
@@ -37,7 +37,7 @@ bool Messenger::sendMessage(Message &message)
     if (!frame(message))
         return false;
 
-    int bytesWritten = dataStream.writeRawData(reinterpret_cast<const char*>(
+    const int bytesWritten = dataStream.writeRawData(reinterpret_cast<const char*>(
                                                messageData.constData()),
                                                messageData.size());
 

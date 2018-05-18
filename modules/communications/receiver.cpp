@@ -15,54 +15,43 @@ const int PORT = 4002;
 // Constructor/Destructor
 //-----------------------------------------------------------------------------
 
-Receiver::Receiver()
-    : server()
+Receiver::Receiver(QObject *parent)
+    : QTcpServer(parent)
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
     , registerDeviceList(nullptr)
     , messenger()
 {
-    connect(&server, &QTcpServer::newConnection,
-            this, &Receiver::connectionReceived);
-    server.setMaxPendingConnections(1);
 }
 
 Receiver::~Receiver()
 {
-    if (server.isListening())
-        server.close();
+    if (this->isListening())
+        this->close();
+
+    if (serverSocket->isOpen())
+        serverSocket->abort();
 }
 
 //-----------------------------------------------------------------------------
 // Connection Slots
 //-----------------------------------------------------------------------------
 
-void Receiver::connectionReceived()
-{
-    incomingConnection(server.nextPendingConnection()->socketDescriptor());
-}
-
 void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 {
     serverState = ServerState::ENCRYPTING;
 
-    server.close();
+    this->close();
 
     serverSocket = new QSslSocket(this);
 
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
-    {
-        delete serverSocket;
         return;
-    }
 
     QFile certFile(QStringLiteral("server.pem"));
     QFile keyFile(QStringLiteral("server.key"));
     if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
-    {
-        delete serverSocket;
         return;
-    }
 
     QSslCertificate cert = QSslCertificate(certFile.readAll());
     QSslKey key = QSslKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
@@ -71,10 +60,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     keyFile.close();
 
     if (key.isNull())
-    {
-        delete serverSocket;
         return;
-    }
 
     serverSocket->setLocalCertificate(cert);
     serverSocket->setPrivateKey(key);
@@ -100,12 +86,17 @@ void Receiver::ready()
     messenger.setDevice(serverSocket);
 
     RequestMessage requestID(RequestMessage::Request::DEVICE_ID);
-
     messenger.sendMessage(requestID);
 }
 
 void Receiver::stopped()
 {
+    if (serverState == ServerState::RECONNECTING)
+    {
+        startServer();
+        return;
+    }
+
     stopServer();
 }
 
@@ -123,7 +114,7 @@ void Receiver::startServer()
     if (serverState == ServerState::CONNECTING)
         return;
 
-    server.listen(QHostAddress::Any, PORT);
+    this->listen(QHostAddress::Any, PORT);
 
     serverState = ServerState::CONNECTING;
 }
@@ -135,7 +126,8 @@ void Receiver::stopServer()
 
     emit disconnected();
 
-    server.close();
+    if (this->isListening())
+        this->close();
 
     if (serverState == ServerState::CONNECTING)
     {
@@ -143,10 +135,8 @@ void Receiver::stopServer()
         return;
     }
 
-    serverState = ServerState::DISCONNECTED;
-
     disconnect(serverSocket, &QSslSocket::encrypted,
-               this, &Receiver::connected);
+               this, &Receiver::ready);
     disconnect(serverSocket, &QSslSocket::readyRead,
                this, &Receiver::handleReadyRead);
     disconnect(serverSocket, &QSslSocket::disconnected,
@@ -155,6 +145,8 @@ void Receiver::stopServer()
                this, &Receiver::handleInfo);
 
     serverSocket->abort();
+
+    serverState = ServerState::DISCONNECTED;
 }
 
 //-----------------------------------------------------------------------------
@@ -179,7 +171,8 @@ void Receiver::handleReadyRead()
 
 void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
 {
-    switch (info->infoType) {
+    switch (info->infoType)
+    {
         case InfoMessage::InfoType::DEVICE_ID:
         {
             handleDeviceID(byteVectorToString(info->info));
@@ -192,7 +185,7 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
 
 void Receiver::handleDeviceID(QString deviceID)
 {
-    int deviceItemsSize = registerDeviceList->items().size();
+    const int deviceItemsSize = registerDeviceList->items().size();
 
     for (int i = 1; i < deviceItemsSize; i++)
     {
@@ -205,7 +198,9 @@ void Receiver::handleDeviceID(QString deviceID)
         }
     }
 
-    AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_ID_INVALID);
+    AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
+
+    serverState = ServerState::RECONNECTING;
 }
 
