@@ -19,13 +19,20 @@ Sender::Sender(QObject *parent)
     , clientSocket()
     , clientState(ClientState::DISCONNECTED)
     , messenger()
-    , thisID("")
+    , thisKey("")
+    , registerDeviceList(nullptr)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-            this, SLOT(error(QAbstractSocket::SocketError)));
-    connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::ready);
-    connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::stopped);
-    connect(&clientSocket, &QSslSocket::readyRead, this, &Sender::handleReadyRead);
+            this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(&clientSocket, &QSslSocket::connected,
+            this, &Sender::socketConnected);
+    connect(&clientSocket, &QSslSocket::encrypted,
+            this, &Sender::socketReady);
+    connect(&clientSocket, &QSslSocket::disconnected,
+            this, &Sender::socketDisconnected);
+    connect(&clientSocket, &QSslSocket::readyRead,
+            this, &Sender::handleReadyRead);
+    connect(this, &Sender::receivedInfo, this, &Sender::handleInfo);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
     connect(this, &Sender::receivedAcknowledge, this, &Sender::handleAcknowledge);
 }
@@ -39,23 +46,30 @@ Sender::~Sender()
 //-----------------------------------------------------------------------------
 // Connection Slots
 //-----------------------------------------------------------------------------
-
-void Sender::ready()
+void Sender::socketConnected()
 {
-    clientState = ClientState::ENCRYPTED;
-    messenger.setDevice(&clientSocket);
+    clientState = ClientState::CONNECTED;
 }
 
-void Sender::stopped()
+void Sender::socketReady()
+{
+    messenger.setDevice(&clientSocket);
+    clientState = ClientState::ENCRYPTED;
+}
+
+void Sender::socketDisconnected()
 {
     if (clientState == ClientState::RECONNECTING)
+    {
+        connectToReceiver();
         return;
+    }
 
     clientState = ClientState::DISCONNECTED;
     emit disconnected();
 }
 
-void Sender::error(QAbstractSocket::SocketError error)
+void Sender::socketError(QAbstractSocket::SocketError error)
 {
     if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
         connectToReceiver();
@@ -65,7 +79,7 @@ void Sender::error(QAbstractSocket::SocketError error)
 // Connection Methods
 //-----------------------------------------------------------------------------
 
-void Sender::setup(QString thisID)
+void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 {
     clientSocket.addCaCertificates(QStringLiteral("rootCA.pem"));
 
@@ -74,7 +88,25 @@ void Sender::setup(QString thisID)
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
 
-    this->thisID = thisID;
+    this->thisKey = thisKey;
+    this->thisID = getIPAddress().split(".").at(3);
+    this->registerDeviceList = &registerDeviceList;
+}
+
+void Sender::connectToReceiver()
+{
+    clientSocket.connectToHostEncrypted(getIPAddress(), PORT);
+
+    clientState = ClientState::CONNECTING;
+}
+
+void Sender::disconnectFromReceiver()
+{
+    if (clientState == ClientState::DISCONNECTED)
+        return;
+
+    clientSocket.abort();
+    socketDisconnected();
 }
 
 QString Sender::getIPAddress() const
@@ -89,19 +121,9 @@ QString Sender::getIPAddress() const
     return "";
 }
 
-void Sender::disconnectFromReceiver()
+QString Sender::getThisID() const
 {
-    if (clientState == ClientState::DISCONNECTED)
-        return;
-
-    clientSocket.abort();
-    stopped();
-}
-
-void Sender::connectToReceiver()
-{
-    clientSocket.connectToHostEncrypted(getIPAddress(), PORT);
-    clientState = ClientState::CONNECTING;
+    return thisID;
 }
 
 //-----------------------------------------------------------------------------
@@ -115,6 +137,10 @@ void Sender::handleReadyRead()
 
     switch (messenger.messageType())
     {
+        case Message::MessageID::INFO:
+            emit receivedInfo(std::static_pointer_cast<InfoMessage>(
+                              messenger.retrieveMessage()));
+            break;
         case Message::MessageID::REQUEST:
             emit receivedRequest(std::static_pointer_cast<RequestMessage>(
                                  messenger.retrieveMessage()));
@@ -128,13 +154,49 @@ void Sender::handleReadyRead()
     }
 }
 
+void Sender::handleInfo(std::shared_ptr<InfoMessage> info)
+{
+    switch (info->infoType)
+    {
+        case InfoMessage::InfoType::DEVICE_KEY:
+        {
+            handleDeviceKey(byteVectorToString(info->info));
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void Sender::handleDeviceKey(QString deviceKey)
+{
+    const int deviceItemsSize = registerDeviceList->items().size();
+
+    for (int i = 1; i < deviceItemsSize; i++)
+    {
+        if (registerDeviceList->items().at(i).deviceKey != deviceKey)
+            continue;
+
+        AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_KEY_OK);
+        messenger.sendMessage(ack);
+        emit connected();
+        return;
+    }
+
+    AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
+    messenger.sendMessage(ack);
+
+    clientState = ClientState::RECONNECTING;
+}
+
 void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
 {
     switch (request->request)
     {
-        case RequestMessage::Request::DEVICE_ID:
+        case RequestMessage::Request::DEVICE_KEY:
         {
-            InfoMessage info(InfoMessage::InfoType::DEVICE_ID, stringToByteVector(thisID));
+            InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
+                             stringToByteVector(thisKey));
             messenger.sendMessage(info);
             break;
         }
@@ -145,13 +207,15 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
 
 void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
 {
-    if (ack->ack == AcknowledgeMessage::Acknowledge::DEVICE_ID_OK)
+    switch (ack->ack)
     {
-        emit connected();
-        return;
+        case AcknowledgeMessage::Acknowledge::ERROR:
+        {
+            clientState = ClientState::RECONNECTING;
+            clientSocket.disconnectFromHost();
+            break;
+        }
+        default:
+            break;
     }
-
-    clientState = ClientState::RECONNECTING;
-    clientSocket.abort();
-    connectToReceiver();
 }

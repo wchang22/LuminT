@@ -6,6 +6,7 @@
 
 #include "modules/message/messenger.hpp"
 #include "modules/message/info_message.hpp"
+#include "modules/message/acknowledge_message.hpp"
 #include "modules/qml/register_device_list.hpp"
 
 class Receiver : public QTcpServer
@@ -19,12 +20,13 @@ public:
     {
         DISCONNECTED        = 0,
         CONNECTING          = 1,
-        ENCRYPTING          = 2,
-        ENCRYPTED           = 3,
-        RECONNECTING        = 4,
+        CONNECTED           = 2,
+        ENCRYPTING          = 3,
+        ENCRYPTED           = 4,
+        RECONNECTING        = 5,
     };
 
-    void setup(RegisterDeviceList &registerDeviceList);
+    void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
 
 protected:
     void incomingConnection(qintptr serverSocketDescriptor) override;
@@ -33,26 +35,33 @@ signals:
     void connected();
     void disconnected();
     void receivedInfo(std::shared_ptr<InfoMessage> info);
+    void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
 public slots:
-     void startServer();
+     bool startServer();
      void stopServer();
 
+     void setPeerIPAddress(QString peerID);
+
 private slots:
-     void ready();
-     void stopped();
+     void socketReady();
+     void socketDisconnected();
      void handleReadyRead();
      void handleInfo(std::shared_ptr<InfoMessage> info);
+     void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
 private:
-    void handleDeviceID(QString deviceID);
+    void handleDeviceKey(QString deviceKey);
+    QString getIPAddress() const;
 
     QSslSocket *serverSocket;
     ServerState serverState;
 
-    RegisterDeviceList *registerDeviceList;
-
     Messenger messenger;
+
+    QString thisKey;
+    QString peerIPAddress;
+    RegisterDeviceList *registerDeviceList;
 };
 
 #endif // RECEIVER_HPP

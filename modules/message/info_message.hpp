@@ -8,7 +8,7 @@ class InfoMessage : public Message
 public:
     enum class InfoType : uint8_t
     {
-        DEVICE_ID       = 1,
+        DEVICE_KEY       = 1,
         MESSAGE_TYPE    = 2,
         MESSAGE_LENGTH  = 3,
     };

@@ -6,11 +6,11 @@
 #include <QFile>
 
 const QString CONFIG_FILE_NAME = "lumint.conf";
-const int DEVICE_ID_SIZE = 8;
+const int DEVICE_KEY_SIZE = 8;
 
 struct RegisterDeviceItem
 {
-    QString deviceID;
+    QString deviceKey;
     bool readOnlyStatus;
     int seq;
     QString buttonText;
@@ -38,8 +38,8 @@ signals:
 public slots:
     void insertItem();
     void removeItem(int index);
-    bool checkNewDeviceID();
-    QString getThisID() const;
+    bool checkNewDeviceKey();
+    QString getThisKey() const;
 
     void readDeviceItems();
     void writeDeviceItems();
@@ -47,7 +47,7 @@ public slots:
 private:
     QVector<RegisterDeviceItem> deviceItems;
     QFile configFile;
-    QString thisID;
+    QString thisKey;
 };
 
 #endif // REGISTER_DEVICE_LIST_HPP

@@ -1,9 +1,9 @@
 #include <QSslKey>
 #include <QFile>
+#include <QNetworkInterface>
 
 #include "receiver.hpp"
 #include "modules/message/request_message.hpp"
-#include "modules/message/acknowledge_message.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -19,9 +19,14 @@ Receiver::Receiver(QObject *parent)
     : QTcpServer(parent)
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
-    , registerDeviceList(nullptr)
     , messenger()
+    , thisKey("")
+    , registerDeviceList(nullptr)
 {
+    connect(this, &Receiver::receivedInfo,
+            this, &Receiver::handleInfo);
+    connect(this, &Receiver::receivedAcknowledge,
+            this, &Receiver::handleAcknowledge);
 }
 
 Receiver::~Receiver()
@@ -39,14 +44,25 @@ Receiver::~Receiver()
 
 void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 {
-    serverState = ServerState::ENCRYPTING;
-
     this->close();
 
     serverSocket = new QSslSocket(this);
 
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
         return;
+
+    serverState = ServerState::CONNECTED;
+
+    connect(serverSocket, &QSslSocket::encrypted,
+            this, &Receiver::socketReady);
+    connect(serverSocket, &QSslSocket::readyRead,
+            this, &Receiver::handleReadyRead);
+    connect(serverSocket, &QSslSocket::disconnected,
+            this, &Receiver::socketDisconnected);
+
+    addPendingConnection(serverSocket);
+
+    serverState = ServerState::ENCRYPTING;
 
     QFile certFile(QStringLiteral("server.pem"));
     QFile keyFile(QStringLiteral("server.key"));
@@ -65,31 +81,20 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     serverSocket->setLocalCertificate(cert);
     serverSocket->setPrivateKey(key);
 
-    addPendingConnection(serverSocket);
-
-    connect(serverSocket, &QSslSocket::encrypted,
-            this, &Receiver::ready);
-    connect(serverSocket, &QSslSocket::readyRead,
-            this, &Receiver::handleReadyRead);
-    connect(serverSocket, &QSslSocket::disconnected,
-            this, &Receiver::stopped);
-    connect(this, &Receiver::receivedInfo,
-            this, &Receiver::handleInfo);
-
     serverSocket->startServerEncryption();
 }
 
-void Receiver::ready()
+void Receiver::socketReady()
 {
-    serverState = ServerState::ENCRYPTED;
-
     messenger.setDevice(serverSocket);
 
-    RequestMessage requestID(RequestMessage::Request::DEVICE_ID);
-    messenger.sendMessage(requestID);
+    RequestMessage requestKey(RequestMessage::Request::DEVICE_KEY);
+    messenger.sendMessage(requestKey);
+
+    serverState = ServerState::ENCRYPTED;
 }
 
-void Receiver::stopped()
+void Receiver::socketDisconnected()
 {
     if (serverState == ServerState::RECONNECTING)
     {
@@ -104,19 +109,22 @@ void Receiver::stopped()
 // Connection Methods
 //-----------------------------------------------------------------------------
 
-void Receiver::setup(RegisterDeviceList &registerDeviceList)
+void Receiver::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 {
+    this->thisKey = thisKey;
     this->registerDeviceList = &registerDeviceList;
 }
 
-void Receiver::startServer()
+bool Receiver::startServer()
 {
     if (serverState == ServerState::CONNECTING)
-        return;
+        this->close();
 
-    this->listen(QHostAddress::Any, PORT);
+    if (!this->listen(QHostAddress(peerIPAddress), PORT))
+        return false;
 
     serverState = ServerState::CONNECTING;
+    return true;
 }
 
 void Receiver::stopServer()
@@ -136,17 +144,35 @@ void Receiver::stopServer()
     }
 
     disconnect(serverSocket, &QSslSocket::encrypted,
-               this, &Receiver::ready);
+            this, &Receiver::socketReady);
     disconnect(serverSocket, &QSslSocket::readyRead,
-               this, &Receiver::handleReadyRead);
+            this, &Receiver::handleReadyRead);
     disconnect(serverSocket, &QSslSocket::disconnected,
-               this, &Receiver::stopped);
-    disconnect(this, &Receiver::receivedInfo,
-               this, &Receiver::handleInfo);
+            this, &Receiver::socketDisconnected);
 
     serverSocket->abort();
 
     serverState = ServerState::DISCONNECTED;
+}
+
+void Receiver::setPeerIPAddress(QString peerID)
+{
+    QString ip(getIPAddress());
+    QStringList ipStrList = ip.split(".");
+    ipStrList.replace(3, peerID);
+    peerIPAddress = ipStrList.join(".");
+}
+
+QString Receiver::getIPAddress() const
+{
+    foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
+    {
+        if (address.protocol() == QAbstractSocket::IPv4Protocol &&
+            address != QHostAddress(QHostAddress::LocalHost))
+            return address.toString();
+    }
+
+    return "";
 }
 
 //-----------------------------------------------------------------------------
@@ -162,7 +188,11 @@ void Receiver::handleReadyRead()
     {
         case Message::MessageID::INFO:
             emit receivedInfo(std::static_pointer_cast<InfoMessage>(
-                                 messenger.retrieveMessage()));
+                              messenger.retrieveMessage()));
+            break;
+        case Message::MessageID::ACKNOWLEDGE:
+            emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
+                                     messenger.retrieveMessage()));
             break;
         default:
             break;
@@ -173,9 +203,9 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
 {
     switch (info->infoType)
     {
-        case InfoMessage::InfoType::DEVICE_ID:
+        case InfoMessage::InfoType::DEVICE_KEY:
         {
-            handleDeviceID(byteVectorToString(info->info));
+            handleDeviceKey(byteVectorToString(info->info));
             break;
         }
         default:
@@ -183,19 +213,19 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
     }
 }
 
-void Receiver::handleDeviceID(QString deviceID)
+void Receiver::handleDeviceKey(QString deviceKey)
 {
     const int deviceItemsSize = registerDeviceList->items().size();
 
     for (int i = 1; i < deviceItemsSize; i++)
     {
-        if (registerDeviceList->items().at(i).deviceID == deviceID)
-        {
-            AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_ID_OK);
-            messenger.sendMessage(ack);
-            emit connected();
-            return;
-        }
+        if (registerDeviceList->items().at(i).deviceKey != deviceKey)
+            continue;
+
+        InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
+                         stringToByteVector(thisKey));
+        messenger.sendMessage(info);
+        return;
     }
 
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
@@ -204,3 +234,22 @@ void Receiver::handleDeviceID(QString deviceID)
     serverState = ServerState::RECONNECTING;
 }
 
+void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
+{
+    switch (ack->ack)
+    {
+        case AcknowledgeMessage::Acknowledge::ERROR:
+        {
+            serverState = ServerState::RECONNECTING;
+            serverSocket->abort();
+            break;
+        }
+        case AcknowledgeMessage::Acknowledge::DEVICE_KEY_OK:
+        {
+            emit connected();
+            break;
+        }
+        default:
+            break;
+    }
+}

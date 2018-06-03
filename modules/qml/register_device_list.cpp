@@ -4,7 +4,7 @@
 
 RegisterDeviceList::RegisterDeviceList()
     : configFile(CONFIG_FILE_NAME)
-    , thisID("")
+    , thisKey("")
 {
     // Add field for adding new devices
     deviceItems.append({
@@ -31,7 +31,7 @@ bool RegisterDeviceList::setItemAt(int index, const RegisterDeviceItem &item)
         return false;
 
     const RegisterDeviceItem &oldItem = deviceItems.at(index);
-    if (item.deviceID == oldItem.deviceID &&
+    if (item.deviceKey == oldItem.deviceKey &&
         item.readOnlyStatus == oldItem.readOnlyStatus &&
         item.seq == oldItem.seq &&
         item.buttonText == oldItem.buttonText)
@@ -50,8 +50,8 @@ void RegisterDeviceList::generateConf()
 
     configFile.write((QUuid::createUuid()
                       .toString().toStdString()
-                      .substr(1, 1+DEVICE_ID_SIZE))
-                      .c_str(), DEVICE_ID_SIZE);
+                      .substr(1, 1+DEVICE_KEY_SIZE))
+                      .c_str(), DEVICE_KEY_SIZE);
 
     configFile.close();
 }
@@ -60,15 +60,15 @@ void RegisterDeviceList::readDeviceItems()
 {
     configFile.open(QIODevice::ReadOnly);
 
-    // first ID is our ID
-    thisID = QString(configFile.readLine(DEVICE_ID_SIZE+1));
+    // first key is our key
+    thisKey = QString(configFile.readLine(DEVICE_KEY_SIZE+1));
 
     int seq = 1;
 
     while (!configFile.atEnd())
     {
-        // Read all IDs and append to deviceItems vector
-        QString line(configFile.readLine(DEVICE_ID_SIZE+1));
+        // Read all keyss and append to deviceItems vector
+        QString line(configFile.readLine(DEVICE_KEY_SIZE+1));
         deviceItems.append({ line, true, seq++, QStringLiteral("\u2013") });
     }
 
@@ -79,18 +79,18 @@ void RegisterDeviceList::writeDeviceItems()
 {
     configFile.open(QIODevice::WriteOnly);
 
-    // write our ID first
-    configFile.write(thisID.toUtf8());
+    // write our key first
+    configFile.write(thisKey.toUtf8());
 
     for (int i = 1; i < deviceItems.length(); i++)
-        configFile.write(deviceItems.at(i).deviceID.toUtf8());
+        configFile.write(deviceItems.at(i).deviceKey.toUtf8());
 
     configFile.close();
 }
 
 void RegisterDeviceList::insertItem()
 {
-    if (deviceItems.at(0).deviceID.isEmpty())
+    if (deviceItems.at(0).deviceKey.isEmpty())
         return;
 
     emit preItemInserted(1);
@@ -98,16 +98,16 @@ void RegisterDeviceList::insertItem()
     static int seq = 0;
 
     // Generate a new item based on text entered and insert it below
-    // the add-new-id-field
+    // the add-new-key-field
     RegisterDeviceItem item;
-    item.deviceID = deviceItems.at(0).deviceID;
+    item.deviceKey = deviceItems.at(0).deviceKey;
     item.readOnlyStatus = true;
     item.seq = ++seq;
     item.buttonText = QStringLiteral("\u2013");
     deviceItems.insert(1, item);
 
-    // Clear the add-new-id field
-    item.deviceID = QStringLiteral("");
+    // Clear the add-new-key field
+    item.deviceKey = QStringLiteral("");
     item.readOnlyStatus = false;
     item.seq = 0;
     item.buttonText = QStringLiteral("+");
@@ -132,16 +132,16 @@ void RegisterDeviceList::removeItem(int index)
     emit postItemRemoved();
 }
 
-bool RegisterDeviceList::checkNewDeviceID()
+bool RegisterDeviceList::checkNewDeviceKey()
 {
-    // New Device IDs must have be 8 characters and
-    // cannot be the same as our device ID
-    return (deviceItems.first().deviceID.length() == 8 ||
-            deviceItems.first().deviceID.length() == 0) &&
-            deviceItems.first().deviceID != getThisID();
+    // New Device keys must have be 8 characters and
+    // cannot be the same as our device key
+    return (deviceItems.first().deviceKey.length() == 8 ||
+            deviceItems.first().deviceKey.length() == 0) &&
+            deviceItems.first().deviceKey != getThisKey();
 }
 
-QString RegisterDeviceList::getThisID() const
+QString RegisterDeviceList::getThisKey() const
 {
-    return thisID;
+    return thisKey;
 }

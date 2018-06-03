@@ -29,8 +29,8 @@ QVariant RegisterDeviceModel::data(const QModelIndex &index, int role) const
     const RegisterDeviceItem item = deviceList->items().at(index.row());
 
     switch (role) {
-        case DeviceIDRole:
-            return QVariant(item.deviceID);
+        case DeviceKeyRole:
+            return QVariant(item.deviceKey);
         case ReadOnlyStatusRole:
             return QVariant(item.readOnlyStatus);
         case SeqRole:
@@ -50,8 +50,8 @@ bool RegisterDeviceModel::setData(const QModelIndex &index, const QVariant &valu
     RegisterDeviceItem item = deviceList->items().at(index.row());
 
     switch (role) {
-        case DeviceIDRole:
-            item.deviceID = value.toString();
+        case DeviceKeyRole:
+            item.deviceKey = value.toString();
             break;
         case ReadOnlyStatusRole:
             item.readOnlyStatus = value.toBool();
@@ -82,7 +82,7 @@ QHash<int, QByteArray> RegisterDeviceModel::roleNames() const
 {
     QHash<int, QByteArray> names;
 
-    names[DeviceIDRole] = "deviceID";
+    names[DeviceKeyRole] = "deviceKey";
     names[ReadOnlyStatusRole] = "readOnlyStatus";
     names[SeqRole] = "seq";
     names[ButtonTextRole] = "buttonText";

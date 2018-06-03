@@ -16,7 +16,7 @@ public:
 
     enum
     {
-        DeviceIDRole,
+        DeviceKeyRole,
         ReadOnlyStatusRole,
         SeqRole,
         ButtonTextRole,

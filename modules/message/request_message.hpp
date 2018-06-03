@@ -9,7 +9,7 @@ public:
 
     enum class Request : uint8_t
     {
-        DEVICE_ID   = 1,
+        DEVICE_KEY   = 1,
         PACKET      = 2,
     };
 

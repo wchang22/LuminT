@@ -10,7 +10,7 @@ public:
     enum class Acknowledge : uint8_t
     {
         ERROR               = 0,
-        DEVICE_ID_OK        = 1,
+        DEVICE_KEY_OK        = 1,
     };
 
     AcknowledgeMessage(Acknowledge ack);

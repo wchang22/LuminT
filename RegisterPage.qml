@@ -15,7 +15,7 @@ Page {
 
         Label {
             id: label
-            text: qsTr("Add Sender Devices")
+            text: qsTr("Add Devices")
             font.bold: true
             font.family: "Segoe UI"
             Layout.columnSpan: 1
@@ -25,7 +25,7 @@ Page {
         }
 
         Label {
-            id: thisIDLabel
+            id: thisKeyLabel
             font.family: "Segoe UI"
             Layout.columnSpan: 1
             Layout.rowSpan: 1
@@ -34,9 +34,9 @@ Page {
         }
 
         Label {
-            id: invalidID
+            id: invalidKey
             color: "#e00000"
-            text: qsTr("*Invalid Device ID")
+            text: qsTr("*Invalid Device Key")
             font.family: "Segoe UI"
             Layout.columnSpan: 1
             Layout.rowSpan: 1
@@ -66,8 +66,8 @@ Page {
                 TextField {
                     id: textField
                     font.pointSize: 15
-                    placeholderText: qsTr("Add 8-digit Device ID")
-                    text: deviceID
+                    placeholderText: qsTr("Add 8-digit Device Key")
+                    text: deviceKey
                     echoMode: TextInput.Normal
                     Layout.preferredWidth: 360
                     Layout.preferredHeight: 40
@@ -75,7 +75,7 @@ Page {
                     maximumLength: 8
                     selectByMouse: true
                     readOnly: readOnlyStatus
-                    onEditingFinished: deviceID = text
+                    onEditingFinished: deviceKey = text
                     validator: RegExpValidator {
                         regExp: /[\da-z]*/
                     }
@@ -97,14 +97,14 @@ Page {
                     onClicked: {
                         if (this.sequence !== 0)
                             registerDeviceList.removeItem(this.sequence)
-                        else if (registerDeviceList.checkNewDeviceID())
+                        else if (registerDeviceList.checkNewDeviceKey())
                         {
                             registerDeviceList.insertItem()
                             textField.text = ""
-                            invalidID.visible = false
+                            invalidKey.visible = false
                         }
                         else
-                            invalidID.visible = true
+                            invalidKey.visible = true
                     }
                 }
 
@@ -112,8 +112,8 @@ Page {
             model: RegisterDeviceModel {
                 deviceList: registerDeviceList
                 Component.onCompleted: {
-                    thisIDLabel.text = qsTr("Your device ID: " +
-                                            registerDeviceList.getThisID())
+                    thisKeyLabel.text = qsTr("Your device key: " +
+                                            registerDeviceList.getThisKey())
                 }
             }
         }

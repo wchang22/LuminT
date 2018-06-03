@@ -14,12 +14,19 @@ Page {
         anchors.fill: parent
 
         Label {
+            id: idLabel
+            text: qsTr("Your ID is: "+sender.getThisID())
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+            font.bold: true
+            font.pointSize: 20
+        }
+
+        Label {
             id: label
             text: qsTr("Waiting for Receiver")
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
             font.bold: true
             font.pointSize: 40
-
         }
 
         BusyIndicator {
