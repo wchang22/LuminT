@@ -21,6 +21,7 @@ Receiver::Receiver(QObject *parent)
     , serverState(ServerState::DISCONNECTED)
     , messenger()
     , thisKey("")
+    , peerIPAddress("")
     , registerDeviceList(nullptr)
 {
     connect(this, &Receiver::receivedInfo,
@@ -96,11 +97,8 @@ void Receiver::socketReady()
 
 void Receiver::socketDisconnected()
 {
-    if (serverState == ServerState::RECONNECTING)
-    {
-        startServer();
-        return;
-    }
+    if (serverState == ServerState::ERROR)
+        emit connectionError();
 
     stopServer();
 }
@@ -132,7 +130,8 @@ void Receiver::stopServer()
     if (serverState == ServerState::DISCONNECTED)
         return;
 
-    emit disconnected();
+    if (serverState != ServerState::ERROR)
+        emit disconnected();
 
     if (this->isListening())
         this->close();
@@ -231,7 +230,7 @@ void Receiver::handleDeviceKey(QString deviceKey)
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
 
-    serverState = ServerState::RECONNECTING;
+    serverState = ServerState::ERROR;
 }
 
 void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
@@ -240,7 +239,7 @@ void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
     {
         case AcknowledgeMessage::Acknowledge::ERROR:
         {
-            serverState = ServerState::RECONNECTING;
+            serverState = ServerState::ERROR;
             serverSocket->abort();
             break;
         }

@@ -1,4 +1,5 @@
 #include "info_message.hpp"
+#include "modules/qml/register_device_list.hpp"
 
 InfoMessage::InfoMessage(InfoType infoType, QVector<uint8_t> info)
 {
@@ -42,9 +43,8 @@ QVector<uint8_t> stringToByteVector(QString str)
 
 QString byteVectorToString(QVector<uint8_t> vec)
 {
-    std::vector<uint8_t> stdVec = vec.toStdVector();
-    std::string stdStr(stdVec.begin(), stdVec.end());
-    QString str = QString::fromStdString(stdStr);
+    char* c_str = reinterpret_cast<char*>(vec.data());
+    c_str[DEVICE_KEY_SIZE] = '\0';
 
-    return str;
+    return QString(c_str);
 }

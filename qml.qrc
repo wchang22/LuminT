@@ -8,5 +8,6 @@
         <file>SenderPage.qml</file>
         <file>ReceiverPage.qml</file>
         <file>RegisterPage.qml</file>
+        <file>ConnectionErrorPage.qml</file>
     </qresource>
 </RCC>

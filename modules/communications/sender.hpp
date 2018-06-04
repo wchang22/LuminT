@@ -24,7 +24,7 @@ public:
         CONNECTED           = 2,
         ENCRYPTING          = 3,
         ENCRYPTED           = 4,
-        RECONNECTING        = 5,
+        ERROR               = 5,
     };
 
     void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
@@ -32,6 +32,7 @@ public:
 signals:
     void connected();
     void disconnected();
+    void connectionError();
 
     void receivedInfo(std::shared_ptr<InfoMessage> info);
     void receivedRequest(std::shared_ptr<RequestMessage> request);

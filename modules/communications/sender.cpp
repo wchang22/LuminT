@@ -20,6 +20,7 @@ Sender::Sender(QObject *parent)
     , clientState(ClientState::DISCONNECTED)
     , messenger()
     , thisKey("")
+    , thisID("")
     , registerDeviceList(nullptr)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
@@ -59,9 +60,10 @@ void Sender::socketReady()
 
 void Sender::socketDisconnected()
 {
-    if (clientState == ClientState::RECONNECTING)
+    if (clientState == ClientState::ERROR)
     {
-        connectToReceiver();
+        clientState = ClientState::DISCONNECTED;
+        emit connectionError();
         return;
     }
 
@@ -161,6 +163,7 @@ void Sender::handleInfo(std::shared_ptr<InfoMessage> info)
         case InfoMessage::InfoType::DEVICE_KEY:
         {
             handleDeviceKey(byteVectorToString(info->info));
+
             break;
         }
         default:
@@ -186,7 +189,7 @@ void Sender::handleDeviceKey(QString deviceKey)
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
 
-    clientState = ClientState::RECONNECTING;
+    clientState = ClientState::ERROR;
 }
 
 void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
@@ -211,7 +214,7 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
     {
         case AcknowledgeMessage::Acknowledge::ERROR:
         {
-            clientState = ClientState::RECONNECTING;
+            clientState = ClientState::ERROR;
             clientSocket.disconnectFromHost();
             break;
         }

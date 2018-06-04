@@ -14,12 +14,14 @@ ApplicationWindow {
         target: sender
         onConnected: window.push(senderComp)
         onDisconnected: window.pop(null)
+        onConnectionError: window.push(connectionErrorComp)
     }
 
     Connections {
         target: receiver
         onConnected: window.push(receiverComp)
         onDisconnected: window.pop(null)
+        onConnectionError: window.push(connectionErrorComp)
     }
 
     header: ToolBar {
@@ -69,6 +71,11 @@ ApplicationWindow {
         Component {
             id: receiverComp
             ReceiverPage {}
+        }
+
+        Component {
+            id: connectionErrorComp
+            ConnectionErrorPage {}
         }
     }
 
