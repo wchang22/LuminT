@@ -9,5 +9,8 @@
         <file>ReceiverPage.qml</file>
         <file>RegisterPage.qml</file>
         <file>ConnectionErrorPage.qml</file>
+        <file>certificates/rootCA.pem</file>
+        <file>certificates/server.key</file>
+        <file>certificates/server.pem</file>
     </qresource>
 </RCC>

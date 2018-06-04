@@ -65,8 +65,8 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
     serverState = ServerState::ENCRYPTING;
 
-    QFile certFile(QStringLiteral("server.pem"));
-    QFile keyFile(QStringLiteral("server.key"));
+    QFile certFile(QStringLiteral(":certificates/server.pem"));
+    QFile keyFile(QStringLiteral(":certificates/server.key"));
     if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
         return;
 

@@ -83,10 +83,11 @@ void Sender::socketError(QAbstractSocket::SocketError error)
 
 void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 {
-    clientSocket.addCaCertificates(QStringLiteral("rootCA.pem"));
+    clientSocket.addCaCertificates(QStringLiteral(":certificates/rootCA.pem"));
 
     QList<QSslError> errorsToIgnore;
-    auto serverCert = QSslCertificate::fromPath(QStringLiteral("server.pem"));
+    auto serverCert = QSslCertificate::fromPath(QStringLiteral(
+                                                ":certificates/server.pem"));
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
 
