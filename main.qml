@@ -10,6 +10,19 @@ ApplicationWindow {
     height: 480
     title: qsTr("LuminT") 
 
+    Rectangle {
+        anchors.fill: parent
+        focus: true
+
+        Keys.onReleased: {
+            if (event.key === Qt.Key_Back)
+            {
+                event.accepted = true
+                window.pop(null)
+            }
+        }
+    }
+
     Connections {
         target: sender
         onConnected: window.push(senderComp)
