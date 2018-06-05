@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.3
 Page {
     id: receiverWaitingPage
     objectName: "receiverWaitingPage"
+    focus: true
 
     ColumnLayout {
         id: columnLayout

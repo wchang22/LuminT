@@ -7,6 +7,9 @@
 #include "modules/communications/sender.hpp"
 #include "modules/qml/register_device_list.hpp"
 #include "modules/qml/register_device_model.hpp"
+#ifdef Q_OS_ANDROID
+    #include "modules/android/android_permissions.hpp"
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -48,6 +51,11 @@ int main(int argc, char *argv[])
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
         return -1;
+
+#ifdef Q_OS_ANDROID
+    AndroidPermissions permissions;
+    permissions.requestPermissions();
+#endif
 
     return app.exec();
 }

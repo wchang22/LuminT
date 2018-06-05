@@ -23,7 +23,8 @@ HEADERS += \
     modules/message/messenger.hpp \
     modules/message/request_message.hpp \
     modules/message/info_message.hpp \
-    modules/message/acknowledge_message.hpp
+    modules/message/acknowledge_message.hpp \
+    modules/android/android_permissions.hpp
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
@@ -33,7 +34,8 @@ SOURCES += main.cpp \
     modules/message/messenger.cpp \
     modules/message/request_message.cpp \
     modules/message/info_message.cpp \
-    modules/message/acknowledge_message.cpp
+    modules/message/acknowledge_message.cpp \
+    modules/android/android_permissions.cpp
 
 RESOURCES += qml.qrc
 
@@ -49,7 +51,19 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    QT += androidextras
     ANDROID_EXTRA_LIBS = \
         $$PWD/android/libcrypto.so \
         $$PWD/android/libssl.so
 }
+
+DISTFILES += \
+    android/AndroidManifest.xml \
+    android/gradle/wrapper/gradle-wrapper.jar \
+    android/gradlew \
+    android/res/values/libs.xml \
+    android/build.gradle \
+    android/gradle/wrapper/gradle-wrapper.properties \
+    android/gradlew.bat
+
+ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
