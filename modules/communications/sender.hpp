@@ -43,6 +43,7 @@ public slots:
     void disconnectFromReceiver();
 
     QString getThisID() const;
+    bool sendTextMessage(QString text);
 
 private slots:
     void socketConnected();

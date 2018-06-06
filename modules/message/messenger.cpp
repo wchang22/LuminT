@@ -2,10 +2,13 @@
 #include "request_message.hpp"
 #include "info_message.hpp"
 #include "acknowledge_message.hpp"
+#include "text_message.hpp"
 
-const int MESSAGE_ID_SIZE = 1;
-const int MESSAGE_SIZE_SIZE = 1;
-const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_SIZE + MESSAGE_SIZE_SIZE;
+const int BYTE = 8;
+const int MESSAGE_ID_BYTES = 1;
+const int MESSAGE_SIZE_BYTES = 2;
+const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_BYTES + MESSAGE_SIZE_BYTES;
+const int MESSAGE_SIZE_INT = pow(2, MESSAGE_SIZE_BYTES * BYTE);
 
 Messenger::Messenger()
 {
@@ -22,11 +25,13 @@ bool Messenger::frame(Message &message)
     messageData.clear();
     messageData.append(message.serialize());
 
-    const int messageSize = messageData.size();
-    if (messageSize <= 0 || messageSize > 255)
+    int messageSize = messageData.size();
+    if (messageSize <= 0 || messageSize > MESSAGE_SIZE_INT - 1)
         return false;
 
-    messageData.prepend(static_cast<uint8_t>(messageSize));
+    for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
+        messageData.prepend(static_cast<uint8_t>((messageSize >> (i * BYTE)) & 0xFF));
+
     messageData.prepend(static_cast<uint8_t>(message.type()));
 
     return true;
@@ -59,6 +64,8 @@ std::shared_ptr<Message> Messenger::retrieveMessage()
             return std::make_shared<RequestMessage>(message);
         case Message::MessageID::ACKNOWLEDGE:
             return std::make_shared<AcknowledgeMessage>(message);
+        case Message::MessageID::TEXT:
+            return std::make_shared<TextMessage>(message);
         default:
             return nullptr;
     }
@@ -72,21 +79,24 @@ bool Messenger::readMessage()
 
     dataStream.startTransaction();
 
-    messageID.resize(MESSAGE_ID_SIZE);
+    messageID.resize(MESSAGE_ID_BYTES);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()),
-                               MESSAGE_ID_SIZE) != MESSAGE_ID_SIZE)
+                               MESSAGE_ID_BYTES) != MESSAGE_ID_BYTES)
         return false;
 
     messageData.append(messageID);
 
-    messageSize.resize(MESSAGE_SIZE_SIZE);
+    messageSize.resize(MESSAGE_SIZE_BYTES);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageSize.data()),
-                               MESSAGE_SIZE_SIZE) != MESSAGE_SIZE_SIZE)
+                               MESSAGE_SIZE_BYTES) != MESSAGE_SIZE_BYTES)
         return false;
 
     messageData.append(messageSize);
 
-    int messageContentSize = static_cast<int>(messageSize.front());
+    int messageContentSize = 0;
+
+    for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
+         messageContentSize += (messageSize.at(i) << ((MESSAGE_SIZE_BYTES  - i - 1) * BYTE));
 
     messageContent.resize(messageContentSize);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),

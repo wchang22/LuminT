@@ -24,7 +24,8 @@ HEADERS += \
     modules/message/request_message.hpp \
     modules/message/info_message.hpp \
     modules/message/acknowledge_message.hpp \
-    modules/android/android_permissions.hpp
+    modules/message/text_message.hpp
+
 
 SOURCES += main.cpp \
     modules/communications/receiver.cpp \
@@ -35,7 +36,7 @@ SOURCES += main.cpp \
     modules/message/request_message.cpp \
     modules/message/info_message.cpp \
     modules/message/acknowledge_message.cpp \
-    modules/android/android_permissions.cpp
+    modules/message/text_message.cpp
 
 RESOURCES += qml.qrc
 
@@ -52,6 +53,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     QT += androidextras
+
+    HEADERS += modules/android/android_permissions.hpp
+    SOURCES += modules/android/android_permissions.cpp
+
     ANDROID_EXTRA_LIBS = \
         $$PWD/android/libcrypto.so \
         $$PWD/android/libssl.so

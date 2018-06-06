@@ -58,12 +58,14 @@ Page {
                     id: clearButton
                     width: 100
                     text: qsTr("Clear")
+                    onClicked: sendTextArea.text = ""
                 }
 
                 Button {
                     id: sendButton
                     width: 100
                     text: qsTr("Send")
+                    onClicked: sender.sendTextMessage(sendTextArea.text)
                 }
 
                 spacing: 5
