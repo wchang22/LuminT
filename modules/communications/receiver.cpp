@@ -21,7 +21,7 @@ Receiver::Receiver(QObject *parent)
     , serverState(ServerState::DISCONNECTED)
     , messenger()
     , thisKey("")
-    , peerIPAddress("")
+    , thisID("")
     , registerDeviceList(nullptr)
 {
     connect(this, &Receiver::receivedInfo,
@@ -110,15 +110,16 @@ void Receiver::socketDisconnected()
 void Receiver::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 {
     this->thisKey = thisKey;
+    this->thisID = getIPAddress().split(".").at(3);
     this->registerDeviceList = &registerDeviceList;
 }
 
 bool Receiver::startServer()
 {
     if (serverState == ServerState::CONNECTING)
-        this->close();
+        return false;
 
-    if (!this->listen(QHostAddress(peerIPAddress), PORT))
+    if (!this->listen(QHostAddress(getIPAddress()), PORT))
         return false;
 
     serverState = ServerState::CONNECTING;
@@ -154,14 +155,6 @@ void Receiver::stopServer()
     serverState = ServerState::DISCONNECTED;
 }
 
-void Receiver::setPeerIPAddress(QString peerID)
-{
-    QString ip(getIPAddress());
-    QStringList ipStrList = ip.split(".");
-    ipStrList.replace(3, peerID);
-    peerIPAddress = ipStrList.join(".");
-}
-
 QString Receiver::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
@@ -172,6 +165,11 @@ QString Receiver::getIPAddress() const
     }
 
     return "";
+}
+
+QString Receiver::getThisID() const
+{
+    return thisID;
 }
 
 //-----------------------------------------------------------------------------

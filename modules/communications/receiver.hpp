@@ -45,7 +45,7 @@ public slots:
      bool startServer();
      void stopServer();
 
-     void setPeerIPAddress(QString peerID);
+     QString getThisID() const;
 
 private slots:
      void socketReady();
@@ -64,7 +64,7 @@ private:
     Messenger messenger;
 
     QString thisKey;
-    QString peerIPAddress;
+    QString thisID;
     RegisterDeviceList *registerDeviceList;
 };
 

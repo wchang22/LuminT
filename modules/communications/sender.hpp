@@ -42,7 +42,7 @@ public slots:
     void connectToReceiver();
     void disconnectFromReceiver();
 
-    QString getThisID() const;
+    void setPeerIPAddress(QString peerID);
     bool sendTextMessage(QString text);
 
 private slots:
@@ -65,7 +65,7 @@ private:
     Messenger messenger;
 
     QString thisKey;
-    QString thisID;
+    QString peerIPAddress;
     RegisterDeviceList *registerDeviceList;
 };
 
