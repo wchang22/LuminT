@@ -21,7 +21,7 @@ Sender::Sender(QObject *parent)
     , clientState(ClientState::DISCONNECTED)
     , messenger()
     , thisKey("")
-    , thisID("")
+    , peerIPAddress("")
     , registerDeviceList(nullptr)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
@@ -93,13 +93,12 @@ void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
     clientSocket.ignoreSslErrors(errorsToIgnore);
 
     this->thisKey = thisKey;
-    this->thisID = getIPAddress().split(".").at(3);
     this->registerDeviceList = &registerDeviceList;
 }
 
 void Sender::connectToReceiver()
 {
-    clientSocket.connectToHostEncrypted(getIPAddress(), PORT);
+    clientSocket.connectToHostEncrypted(peerIPAddress, PORT);
 
     clientState = ClientState::CONNECTING;
 }
@@ -113,6 +112,14 @@ void Sender::disconnectFromReceiver()
     socketDisconnected();
 }
 
+void Sender::setPeerIPAddress(QString peerID)
+{
+    QString ip(getIPAddress());
+    QStringList ipStrList = ip.split(".");
+    ipStrList.replace(3, peerID);
+    peerIPAddress = ipStrList.join(".");
+}
+
 QString Sender::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
@@ -123,11 +130,6 @@ QString Sender::getIPAddress() const
     }
 
     return "";
-}
-
-QString Sender::getThisID() const
-{
-    return thisID;
 }
 
 //-----------------------------------------------------------------------------
