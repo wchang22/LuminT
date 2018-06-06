@@ -193,6 +193,10 @@ void Receiver::handleReadyRead()
             emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
                                      messenger.retrieveMessage()));
             break;
+        case Message::MessageID::TEXT:
+            emit receivedText(std::static_pointer_cast<TextMessage>(
+                              messenger.retrieveMessage())->text);
+            break;
         default:
             break;
     }

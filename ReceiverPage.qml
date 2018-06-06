@@ -7,6 +7,11 @@ Page {
     padding: 30
     objectName: "receiverPage"
 
+    Connections {
+        target: receiver
+        onReceivedText: receiveTextArea.text = text
+    }
+
     ColumnLayout {
         id: receiverColumnLayout
         anchors.fill: parent
@@ -59,6 +64,7 @@ Page {
                     id: clearButton
                     width: 100
                     text: qsTr("Clear")
+                    onClicked: receiveTextArea.text = ""
                 }
 
                 spacing: 5

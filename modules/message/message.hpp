@@ -13,6 +13,7 @@ public:
         INFO            = 1,
         REQUEST         = 2,
         ACKNOWLEDGE     = 3,
+        TEXT            = 4,
     };
 
     virtual ~Message() {}

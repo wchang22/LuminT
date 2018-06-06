@@ -7,6 +7,7 @@
 #include "modules/message/messenger.hpp"
 #include "modules/message/info_message.hpp"
 #include "modules/message/acknowledge_message.hpp"
+#include "modules/message/text_message.hpp"
 #include "modules/qml/register_device_list.hpp"
 
 class Receiver : public QTcpServer
@@ -38,6 +39,7 @@ signals:
 
     void receivedInfo(std::shared_ptr<InfoMessage> info);
     void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
+    void receivedText(QString text);
 
 public slots:
      bool startServer();

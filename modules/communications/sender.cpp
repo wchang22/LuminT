@@ -3,6 +3,7 @@
 
 #include "sender.hpp"
 #include "modules/qml/register_device_list.hpp"
+#include "modules/message/text_message.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -222,4 +223,13 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         default:
             break;
     }
+}
+
+bool Sender::sendTextMessage(QString text)
+{
+    TextMessage textMessage(text);
+    if (!messenger.sendMessage(textMessage))
+        return false;
+
+    return true;
 }
