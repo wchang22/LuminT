@@ -3,24 +3,29 @@
 
 #include "message.hpp"
 
+/*!
+ * \brief The RequestMessage class, request for info from recipient
+ */
+
 class RequestMessage : public Message
 {
 public:
 
     enum class Request : uint8_t
     {
-        DEVICE_KEY   = 1,
-        PACKET      = 2,
+        DEVICE_KEY,  // Receiver requests device key from Sender
+        FILE_PACKET, // Receiver requests file packet from Sender
+        ENUM_END,    // Marks end of enum, used in testing
     };
 
     RequestMessage(Request request);
-    RequestMessage(QVector<uint8_t> &requestVector);
+    RequestMessage(QByteArray &requestBytes);
 
     ~RequestMessage();
 
     Message::MessageID type() const;
 
-    QVector<uint8_t> serialize();
+    QByteArray serialize();
 
     Request request;
 };

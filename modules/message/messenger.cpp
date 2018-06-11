@@ -10,11 +10,6 @@ const int MESSAGE_SIZE_BYTES = 2;
 const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_BYTES + MESSAGE_SIZE_BYTES;
 const int MESSAGE_SIZE_INT = pow(2, MESSAGE_SIZE_BYTES * BYTE);
 
-Messenger::Messenger()
-{
-
-}
-
 void Messenger::setDevice(QSslSocket *device)
 {
     dataStream.setDevice(device);
@@ -30,9 +25,9 @@ bool Messenger::frame(Message &message)
         return false;
 
     for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
-        messageData.prepend(static_cast<uint8_t>((messageSize >> (i * BYTE)) & 0xFF));
+        messageData.prepend(static_cast<char>((messageSize >> (i * BYTE)) & 0xFF));
 
-    messageData.prepend(static_cast<uint8_t>(message.type()));
+    messageData.prepend(static_cast<char>(message.type()));
 
     return true;
 }
@@ -54,9 +49,9 @@ bool Messenger::sendMessage(Message &message)
 
 std::shared_ptr<Message> Messenger::retrieveMessage()
 {
-    QVector<uint8_t> message(messageData.mid(MESSAGE_CONTENT_OFFSET));
+    QByteArray message(messageData.mid(MESSAGE_CONTENT_OFFSET));
 
-    switch (static_cast<Message::MessageID>(messageData.front()))
+    switch (static_cast<Message::MessageID>(messageData.at(0)))
     {
         case Message::MessageID::INFO:
             return std::make_shared<InfoMessage>(message);
@@ -75,7 +70,7 @@ bool Messenger::readMessage()
 {
     messageData.clear();
 
-    QVector<uint8_t> messageID, messageSize, messageContent;
+    QByteArray messageID, messageSize, messageContent;
 
     dataStream.startTransaction();
 

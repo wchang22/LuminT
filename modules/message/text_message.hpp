@@ -1,19 +1,21 @@
 #ifndef TEXT_MESSAGE_HPP
 #define TEXT_MESSAGE_HPP
 
+#include <QString>
+
 #include "message.hpp"
 
 class TextMessage : public Message
 {
 public:
     TextMessage(QString &text);
-    TextMessage(QVector<uint8_t> &textVector);
+    TextMessage(QByteArray &textVector);
 
     ~TextMessage();
 
     Message::MessageID type() const;
 
-    QVector<uint8_t> serialize();
+    QByteArray serialize();
 
     QString text;
 };

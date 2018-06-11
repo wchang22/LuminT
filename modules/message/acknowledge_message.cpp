@@ -5,9 +5,9 @@ AcknowledgeMessage::AcknowledgeMessage(Acknowledge ack)
     this->ack = ack;
 }
 
-AcknowledgeMessage::AcknowledgeMessage(QVector<uint8_t> &ackVector)
+AcknowledgeMessage::AcknowledgeMessage(QByteArray &ackBytes)
 {
-    this->ack = static_cast<Acknowledge>(ackVector.front());
+    this->ack = static_cast<Acknowledge>(ackBytes.at(0));
 }
 
 AcknowledgeMessage::~AcknowledgeMessage()
@@ -20,10 +20,10 @@ Message::MessageID AcknowledgeMessage::type() const
     return Message::MessageID::ACKNOWLEDGE;
 }
 
-QVector<uint8_t> AcknowledgeMessage::serialize()
+QByteArray AcknowledgeMessage::serialize()
 {
-    QVector<uint8_t> ackVector;
-    ackVector.append(static_cast<uint8_t>(this->ack));
+    QByteArray ackBytes;
+    ackBytes.append(static_cast<char>(this->ack));
 
-    return ackVector;
+    return ackBytes;
 }

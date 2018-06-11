@@ -3,31 +3,29 @@
 
 #include "message.hpp"
 
+/*!
+ * \brief The InfoMessage class, sends info
+ */
+
 class InfoMessage : public Message
 {
 public:
     enum class InfoType : uint8_t
     {
-        DEVICE_KEY       = 1,
-        MESSAGE_TYPE    = 2,
-        MESSAGE_LENGTH  = 3,
+        DEVICE_KEY, // Device key of sender
     };
 
-    InfoMessage(InfoType infoType, QVector<uint8_t> info);
-    InfoMessage(QVector<uint8_t> &infoVector);
+    InfoMessage(InfoType infoType, QByteArray info);
+    InfoMessage(QByteArray &infoBytes);
 
     ~InfoMessage();
 
     Message::MessageID type() const;
 
-    QVector<uint8_t> serialize();
+    QByteArray serialize();
 
     InfoType infoType;
-    QVector<uint8_t> info;
+    QByteArray info;
 };
-
-QVector<uint8_t> stringToByteVector(QString str);
-
-QString byteVectorToString(QVector<uint8_t> vec);
 
 #endif // INFO_MESSAGE_HPP

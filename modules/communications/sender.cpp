@@ -167,7 +167,7 @@ void Sender::handleInfo(std::shared_ptr<InfoMessage> info)
     {
         case InfoMessage::InfoType::DEVICE_KEY:
         {
-            handleDeviceKey(byteVectorToString(info->info));
+            handleDeviceKey(QString(info->info));
 
             break;
         }
@@ -204,7 +204,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         case RequestMessage::Request::DEVICE_KEY:
         {
             InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
-                             stringToByteVector(thisKey));
+                             thisKey.toUtf8());
             messenger.sendMessage(info);
             break;
         }

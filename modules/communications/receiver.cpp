@@ -207,7 +207,7 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
     {
         case InfoMessage::InfoType::DEVICE_KEY:
         {
-            handleDeviceKey(byteVectorToString(info->info));
+            handleDeviceKey(QString(info->info));
             break;
         }
         default:
@@ -225,7 +225,7 @@ void Receiver::handleDeviceKey(QString deviceKey)
             continue;
 
         InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
-                         stringToByteVector(thisKey));
+                         thisKey.toUtf8());
         messenger.sendMessage(info);
         return;
     }

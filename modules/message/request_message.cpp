@@ -5,9 +5,9 @@ RequestMessage::RequestMessage(Request request)
     this->request = request;
 }
 
-RequestMessage::RequestMessage(QVector<uint8_t> &requestVector)
+RequestMessage::RequestMessage(QByteArray &requestBytes)
 {
-    this->request = static_cast<Request>(requestVector.front());
+    this->request = static_cast<Request>(requestBytes.at(0));
 }
 
 RequestMessage::~RequestMessage()
@@ -20,10 +20,10 @@ Message::MessageID RequestMessage::type() const
     return Message::MessageID::REQUEST;
 }
 
-QVector<uint8_t> RequestMessage::serialize()
+QByteArray RequestMessage::serialize()
 {
-    QVector<uint8_t> requestVector;
-    requestVector.append(static_cast<uint8_t>(this->request));
+    QByteArray requestBytes;
+    requestBytes.append(static_cast<char>(this->request));
 
-    return requestVector;
+    return requestBytes;
 }

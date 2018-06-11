@@ -3,24 +3,29 @@
 
 #include "message.hpp"
 
+/*!
+ * \brief The AcknowledgeMessage class, acknowledges info has been received
+ */
+
 class AcknowledgeMessage : public Message
 {
 public:
 
     enum class Acknowledge : uint8_t
     {
-        ERROR               = 0,
-        DEVICE_KEY_OK        = 1,
+        ERROR,          // General error, often device key is invalid
+        DEVICE_KEY_OK,  // Device key is accepted
+        ENUM_END,       // Marks end of num, used for testing
     };
 
     AcknowledgeMessage(Acknowledge ack);
-    AcknowledgeMessage(QVector<uint8_t> &ackVector);
+    AcknowledgeMessage(QByteArray &ackBytes);
 
     ~AcknowledgeMessage();
 
     Message::MessageID type() const;
 
-    QVector<uint8_t> serialize();
+    QByteArray serialize();
 
     Acknowledge ack;
 };

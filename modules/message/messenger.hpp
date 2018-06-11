@@ -4,15 +4,12 @@
 #include <QDataStream>
 #include <QSslSocket>
 #include <memory>
-#include <QVector>
 
 #include "message.hpp"
 
 class Messenger
 {
 public:
-    Messenger();
-
     void setDevice(QSslSocket *device);
     bool sendMessage(Message &message);
     bool readMessage();
@@ -24,7 +21,7 @@ private:
     bool frame(Message &message);
 
     QDataStream dataStream;
-    QVector<uint8_t> messageData;
+    QByteArray messageData;
 };
 
 #endif // MESSENGER_HPP

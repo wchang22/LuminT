@@ -12,7 +12,12 @@
 QT += quick network
 CONFIG += c++14
 
-DEFINES += QT_DEPRECATED_WARNINGS
+# Unit/Integration testing
+test {
+    TEMPLATE = subdirs
+    SUBDIRS += \
+               tests/test_message
+}
 
 HEADERS += \
     modules/communications/receiver.hpp \
@@ -40,15 +45,15 @@ SOURCES += main.cpp \
 
 RESOURCES += qml.qrc
 
-win32 {
-    LIBS += $$PWD/openssl/libeay32.lib \
-            $$PWD/openssl/ssleay32.lib
-}
-
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32 {
+    LIBS += $$PWD/openssl/libeay32.lib \
+            $$PWD/openssl/ssleay32.lib
+}
 
 contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
     QT += androidextras
@@ -71,3 +76,4 @@ DISTFILES += \
     android/gradlew.bat
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
