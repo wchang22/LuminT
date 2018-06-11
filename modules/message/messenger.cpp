@@ -25,7 +25,8 @@ bool Messenger::frame(Message &message)
         return false;
 
     for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
-        messageData.prepend(static_cast<char>((messageSize >> (i * BYTE)) & 0xFF));
+        messageData.prepend(static_cast<char>(
+                           (messageSize >> (i * BYTE)) & 0xFF));
 
     messageData.prepend(static_cast<char>(message.type()));
 
@@ -37,9 +38,10 @@ bool Messenger::sendMessage(Message &message)
     if (!frame(message))
         return false;
 
-    const int bytesWritten = dataStream.writeRawData(reinterpret_cast<const char*>(
-                                               messageData.constData()),
-                                               messageData.size());
+    const int bytesWritten = dataStream.writeRawData(
+                                reinterpret_cast<const char*>(
+                                messageData.constData()),
+                                messageData.size());
 
     if (bytesWritten != messageData.size())
         return false;
@@ -91,7 +93,8 @@ bool Messenger::readMessage()
     int messageContentSize = 0;
 
     for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
-         messageContentSize += (messageSize.at(i) << ((MESSAGE_SIZE_BYTES  - i - 1) * BYTE));
+         messageContentSize += (messageSize.at(i) <<
+                               ((MESSAGE_SIZE_BYTES  - i - 1) * BYTE));
 
     messageContent.resize(messageContentSize);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
@@ -111,5 +114,5 @@ Message::MessageID Messenger::messageType() const
     if (messageData.size() < MESSAGE_CONTENT_OFFSET)
         return Message::MessageID::INVALID;
 
-    return static_cast<Message::MessageID>(messageData.front());
+    return static_cast<Message::MessageID>(messageData.at(0));
 }

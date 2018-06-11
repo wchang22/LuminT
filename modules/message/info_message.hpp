@@ -10,7 +10,7 @@
 class InfoMessage : public Message
 {
 public:
-    enum class InfoType : uint8_t
+    enum class InfoType : char
     {
         DEVICE_KEY, // Device key of sender
     };

@@ -11,7 +11,7 @@ class RequestMessage : public Message
 {
 public:
 
-    enum class Request : uint8_t
+    enum class Request : char
     {
         DEVICE_KEY,  // Receiver requests device key from Sender
         FILE_PACKET, // Receiver requests file packet from Sender

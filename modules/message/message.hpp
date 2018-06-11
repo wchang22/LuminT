@@ -10,7 +10,7 @@ public:
     /*!
      * \brief The MessageID enum, specifies message types
      */
-    enum class MessageID : uint8_t
+    enum class MessageID : char
     {
         INVALID,
         INFO,

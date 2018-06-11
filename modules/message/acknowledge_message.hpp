@@ -11,7 +11,7 @@ class AcknowledgeMessage : public Message
 {
 public:
 
-    enum class Acknowledge : uint8_t
+    enum class Acknowledge : char
     {
         ERROR,          // General error, often device key is invalid
         DEVICE_KEY_OK,  // Device key is accepted
