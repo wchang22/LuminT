@@ -10,3 +10,8 @@ Wireless Data Transfer Software for Text and Files
 * TLS Encryption for secure data transfer
 * Pause/Resume transfer capability
 * Multiplatform (Windows, Linux, Android)
+
+## Design
+![System Map](https://raw.githubusercontent.com/wchang22/lumint/master/design/System%20Map.png)
+![Message Format](https://raw.githubusercontent.com/wchang22/lumint/master/design/Message%20Content.png)
+![Connection Protocol](https://raw.githubusercontent.com/wchang22/lumint/master/design/Connection%20Protocol.png)
