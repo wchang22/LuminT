@@ -8,6 +8,7 @@
 #include "modules/message/text_message.hpp"
 #include "modules/message/messenger.hpp"
 
+Q_DECLARE_METATYPE(std::shared_ptr<Message>)
 Q_DECLARE_METATYPE(AcknowledgeMessage::Acknowledge)
 Q_DECLARE_METATYPE(InfoMessage::InfoType)
 Q_DECLARE_METATYPE(RequestMessage::Request)
@@ -19,9 +20,6 @@ class TestMessage : public QObject
 public:
 
 private Q_SLOTS:
-    void initTestCase();
-    void cleanupTestCase();
-
     void test_acknowledge_message_data();
     void test_acknowledge_message();
 
@@ -33,6 +31,9 @@ private Q_SLOTS:
 
     void test_text_message_data();
     void test_text_message();
+
+    void test_frame_retrieve_message_data();
+    void test_frame_retrieve_message();
 };
 
 #endif // TEST_MESSAGE_HPP

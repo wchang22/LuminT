@@ -9,13 +9,15 @@
 
 class Messenger
 {
+    friend class TestMessage;
+
 public:
     void setDevice(QSslSocket *device);
     bool sendMessage(Message &message);
     bool readMessage();
+
     std::shared_ptr<Message> retrieveMessage();
     Message::MessageID messageType() const;
-
 
 private:
     bool frame(Message &message);
