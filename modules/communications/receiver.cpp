@@ -53,8 +53,6 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
         return;
 
-    serverState = ServerState::CONNECTED;
-
     connect(serverSocket, &QSslSocket::encrypted,
             this, &Receiver::socketReady);
     connect(serverSocket, &QSslSocket::readyRead,
