@@ -1,6 +1,7 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick 2.10
+import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
+import QtQuick.Dialogs 1.2
 
 import communications 1.0
 
@@ -9,18 +10,19 @@ ApplicationWindow {
     width: 480
     height: 480
     title: qsTr("LuminT") 
+    Component.onCompleted: {
+        if (receiver.state() === Receiver.ERROR)
+            errorDialog.open()
+    }
 
-    Rectangle {
-        anchors.fill: parent
-        focus: true
-
-        Keys.onReleased: {
-            if (event.key === Qt.Key_Back)
-            {
-                event.accepted = true
-                window.pop(null)
-            }
-        }
+    MessageDialog {
+        id: errorDialog
+        title: qsTr("Error")
+        text: qsTr("Please make sure you are connected "+
+                   "to internet before starting LuminT. Closing...")
+        icon: StandardIcon.Critical
+        onAccepted: Qt.quit()
+        onVisibleChanged: if (!this.visible) Qt.quit()
     }
 
     Connections {
@@ -50,11 +52,8 @@ ApplicationWindow {
 
     StackView {
         id: window
-        clip: false
-        transformOrigin: Item.TopLeft
         anchors.fill: parent
         initialItem: startPageComp
-
 
         Component {
             id: startPageComp
@@ -91,6 +90,5 @@ ApplicationWindow {
             ConnectionErrorPage {}
         }
     }
-
 
 }

@@ -1,7 +1,8 @@
 #ifndef TEST_MESSAGE_HPP
 #define TEST_MESSAGE_HPP
 
-#include <QObject>
+#include <QtTest>
+
 #include "modules/message/acknowledge_message.hpp"
 #include "modules/message/info_message.hpp"
 #include "modules/message/request_message.hpp"

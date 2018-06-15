@@ -1,5 +1,3 @@
-#include <QtTest>
-
 #include "test_message.hpp"
 
 QTEST_MAIN(TestMessage)

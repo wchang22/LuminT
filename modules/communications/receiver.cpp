@@ -22,6 +22,7 @@ Receiver::Receiver(QObject *parent)
     , messenger()
     , thisKey("")
     , thisID("")
+    , ipAddress("")
     , registerDeviceList(nullptr)
 {
     connect(this, &Receiver::receivedInfo,
@@ -109,8 +110,16 @@ void Receiver::socketDisconnected()
 
 void Receiver::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 {
+    ipAddress = getIPAddress();
+
+    if (ipAddress.length() == 0)
+    {
+        serverState = ServerState::ERROR;
+        return;
+    }
+
     this->thisKey = thisKey;
-    this->thisID = getIPAddress().split(".").at(3);
+    this->thisID = ipAddress.split(".").at(3);
     this->registerDeviceList = &registerDeviceList;
 }
 
@@ -119,7 +128,7 @@ bool Receiver::startServer()
     if (serverState == ServerState::CONNECTING)
         return false;
 
-    if (!this->listen(QHostAddress(getIPAddress()), PORT))
+    if (!this->listen(QHostAddress(ipAddress), PORT))
         return false;
 
     serverState = ServerState::CONNECTING;
@@ -161,7 +170,7 @@ QString Receiver::getIPAddress() const
     {
         if (address.protocol() == QAbstractSocket::IPv4Protocol &&
             address != QHostAddress(QHostAddress::LocalHost) &&
-            address.toString().section( ".", -1, -1 ) != "1")
+            address.toString().section(".", -1, -1 ) != "1")
             return address.toString();
     }
 
@@ -171,6 +180,11 @@ QString Receiver::getIPAddress() const
 QString Receiver::getThisID() const
 {
     return thisID;
+}
+
+Receiver::ServerState Receiver::state() const
+{
+    return serverState;
 }
 
 //-----------------------------------------------------------------------------

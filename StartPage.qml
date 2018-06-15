@@ -1,5 +1,5 @@
-import QtQuick 2.0
-import QtQuick.Controls 2.0
+import QtQuick 2.10
+import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 
 import qml 1.0
@@ -17,11 +17,6 @@ Page {
         Label {
             id: title
             text: qsTr("LuminT")
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            Layout.fillHeight: false
-            Layout.fillWidth: false
-            transformOrigin: Item.Center
             Layout.preferredHeight: 70
             Layout.preferredWidth: 180
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
@@ -40,13 +35,11 @@ Page {
         Button {
             id: send
             text: qsTr("Send")
-            focusPolicy: Qt.NoFocus
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
             Layout.preferredHeight: 40
             Layout.preferredWidth: 150
             onClicked: window.push(senderWaitingComp)
         }
-
 
         Button {
             id: receive
@@ -56,7 +49,6 @@ Page {
             Layout.preferredWidth: 150
             onClicked: window.push(receiverWaitingComp)
         }
-
 
         Button {
             id: register

@@ -1,5 +1,5 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick 2.10
+import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 
 Page {
@@ -42,6 +42,7 @@ Page {
                     focusPolicy: Qt.NoFocus
                     onClicked: {
                         sender.setPeerIPAddress(receiverIDField.text)
+
                         if (receiverIDField.text.length === 0 ||
                             parseInt(receiverIDField.text, 10) > 255 ||
                             parseInt(receiverIDField.text, 10) === 0)

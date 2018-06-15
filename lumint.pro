@@ -16,7 +16,8 @@ CONFIG += c++14
 test {
     TEMPLATE = subdirs
     SUBDIRS += \
-               tests/test_message
+               tests/test_message \
+               tests/test_communications \
 }
 
 HEADERS += \

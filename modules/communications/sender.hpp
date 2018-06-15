@@ -13,18 +13,21 @@
 class Sender : public QObject
 {
     Q_OBJECT
+
+    friend class TestCommunications;
+
 public:
     explicit Sender(QObject *parent = nullptr);
     ~Sender();
 
     enum class ClientState : uint8_t
     {
-        DISCONNECTED        = 0,
-        CONNECTING          = 1,
-        CONNECTED           = 2,
-        ENCRYPTING          = 3,
-        ENCRYPTED           = 4,
-        ERROR               = 5,
+        ERROR,
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED,
+        ENCRYPTING,
+        ENCRYPTED,
     };
 
     void setup(QString thisKey, RegisterDeviceList &registerDeviceList);

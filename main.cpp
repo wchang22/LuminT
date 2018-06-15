@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
 
     registerDeviceList.generateConf();
     registerDeviceList.readDeviceItems();
-    sender.setup(registerDeviceList.getThisKey(), registerDeviceList);
     receiver.setup(registerDeviceList.getThisKey(), registerDeviceList);
+    sender.setup(registerDeviceList.getThisKey(), registerDeviceList);
 
     // Expose objects to qml
     QQmlApplicationEngine engine;

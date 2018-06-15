@@ -13,19 +13,23 @@
 class Receiver : public QTcpServer
 {
     Q_OBJECT
+
+    friend class TestCommunications;
+
 public:
     Receiver(QObject *parent = nullptr);
     ~Receiver();
 
     enum class ServerState : uint8_t
     {
-        DISCONNECTED        = 0,
-        CONNECTING          = 1,
-        CONNECTED           = 2,
-        ENCRYPTING          = 3,
-        ENCRYPTED           = 4,
-        ERROR               = 5,
+        ERROR,
+        DISCONNECTED,
+        CONNECTING,
+        CONNECTED,
+        ENCRYPTING,
+        ENCRYPTED,
     };
+    Q_ENUM(ServerState)
 
     void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
 
@@ -42,17 +46,19 @@ signals:
     void receivedText(QString text);
 
 public slots:
-     bool startServer();
-     void stopServer();
+    ServerState state() const;
 
-     QString getThisID() const;
+    bool startServer();
+    void stopServer();
+
+    QString getThisID() const;
 
 private slots:
-     void socketReady();
-     void socketDisconnected();
-     void handleReadyRead();
-     void handleInfo(std::shared_ptr<InfoMessage> info);
-     void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
+    void socketReady();
+    void socketDisconnected();
+    void handleReadyRead();
+    void handleInfo(std::shared_ptr<InfoMessage> info);
+    void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
 private:
     void handleDeviceKey(QString deviceKey);
@@ -65,6 +71,7 @@ private:
 
     QString thisKey;
     QString thisID;
+    QString ipAddress;
     RegisterDeviceList *registerDeviceList;
 };
 
