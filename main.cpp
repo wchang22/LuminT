@@ -7,6 +7,7 @@
 #include "modules/communications/sender.hpp"
 #include "modules/qml/register_device_list.hpp"
 #include "modules/qml/register_device_model.hpp"
+#include "modules/utilities/utilities.hpp"
 #ifdef Q_OS_ANDROID
     #include "modules/android/android_permissions.hpp"
 #endif
@@ -31,10 +32,14 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<RegisterDeviceModel>("qml", 1, 0, "RegisterDeviceModel");
 
+    qmlRegisterUncreatableType<Utilities>("utilities", 1, 0, "Utilities",
+        QStringLiteral("Utilities should not be created in QML"));
+
     // Setup objects
     RegisterDeviceList registerDeviceList;
     Sender sender;
     Receiver receiver;
+    Utilities utilities(app.clipboard());
 
     registerDeviceList.generateConf();
     registerDeviceList.readDeviceItems();
@@ -47,6 +52,7 @@ int main(int argc, char *argv[])
                 QStringLiteral("registerDeviceList"), &registerDeviceList);
     engine.rootContext()->setContextProperty(QStringLiteral("sender"), &sender);
     engine.rootContext()->setContextProperty(QStringLiteral("receiver"), &receiver);
+    engine.rootContext()->setContextProperty(QStringLiteral("utilities"), &utilities);
 
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())

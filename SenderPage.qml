@@ -47,12 +47,14 @@ ScrollView {
                         id: clipboardCopyButton
                         width: 100
                         text: qsTr("Copy")
+                        onClicked: utilities.copy(sendTextArea.text)
                     }
 
                     Button {
                         id: clipboardPasteButton
                         width: 100
                         text: qsTr("Paste")
+                        onClicked: sendTextArea.text = utilities.paste()
                     }
 
                     Button {
