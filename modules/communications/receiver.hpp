@@ -3,6 +3,7 @@
 
 #include <QTcpServer>
 #include <QSslSocket>
+#include <QTimer>
 
 #include "modules/message/messenger.hpp"
 #include "modules/message/info_message.hpp"
@@ -28,6 +29,7 @@ public:
         CONNECTED,
         ENCRYPTING,
         ENCRYPTED,
+        UNRECOGNIZED,
     };
     Q_ENUM(ServerState)
 
@@ -39,6 +41,7 @@ protected:
 signals:
     void connected();
     void disconnected();
+    void connectionUnrecognized();
     void connectionError();
 
     void receivedInfo(std::shared_ptr<InfoMessage> info);
@@ -56,6 +59,9 @@ public slots:
 private slots:
     void socketReady();
     void socketDisconnected();
+
+    void encryptingTimeout();
+
     void handleReadyRead();
     void handleInfo(std::shared_ptr<InfoMessage> info);
     void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
@@ -73,6 +79,8 @@ private:
     QString thisID;
     QString ipAddress;
     RegisterDeviceList *registerDeviceList;
+
+    QTimer encryptingTimer;
 };
 
 #endif // RECEIVER_HPP

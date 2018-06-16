@@ -12,5 +12,6 @@
         <file>certificates/rootCA.pem</file>
         <file>certificates/server.key</file>
         <file>certificates/server.pem</file>
+        <file>ConnectionUnrecognizedPage.qml</file>
     </qresource>
 </RCC>

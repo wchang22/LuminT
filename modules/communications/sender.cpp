@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 const int PORT = 4002;
+const int ENCRYPTING_TIMEOUT = 5000; // ms
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -23,6 +24,7 @@ Sender::Sender(QObject *parent)
     , thisKey("")
     , peerIPAddress("")
     , registerDeviceList(nullptr)
+    , encryptingTimer(this)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -37,6 +39,10 @@ Sender::Sender(QObject *parent)
     connect(this, &Sender::receivedInfo, this, &Sender::handleInfo);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
     connect(this, &Sender::receivedAcknowledge, this, &Sender::handleAcknowledge);
+
+    connect(&encryptingTimer, &QTimer::timeout,
+            this, &Sender::encryptingTimeout);
+    encryptingTimer.setSingleShot(true);
 }
 
 Sender::~Sender()
@@ -50,32 +56,51 @@ Sender::~Sender()
 //-----------------------------------------------------------------------------
 void Sender::socketConnected()
 {
+    encryptingTimer.start(ENCRYPTING_TIMEOUT);
+
     clientState = ClientState::CONNECTED;
 }
 
 void Sender::socketReady()
 {
+    encryptingTimer.stop();
+
     messenger.setDevice(&clientSocket);
     clientState = ClientState::ENCRYPTED;
 }
 
 void Sender::socketDisconnected()
 {
-    if (clientState == ClientState::ERROR)
+    if (encryptingTimer.isActive())
+        encryptingTimer.stop();
+
+    switch(clientState)
     {
-        clientState = ClientState::DISCONNECTED;
-        emit connectionError();
-        return;
+        case ClientState::UNRECOGNIZED:
+            emit connectionUnrecognized();
+            break;
+        case ClientState::CONNECTED:
+        case ClientState::ERROR:
+            emit connectionError();
+            break;
+        default:
+            emit disconnected();
     }
 
     clientState = ClientState::DISCONNECTED;
-    emit disconnected();
 }
 
 void Sender::socketError(QAbstractSocket::SocketError error)
 {
     if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
         connectToReceiver();
+}
+
+void Sender::encryptingTimeout()
+{
+    clientState = ClientState::ERROR;
+
+    clientSocket.abort();
 }
 
 //-----------------------------------------------------------------------------
@@ -87,8 +112,8 @@ void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
     clientSocket.addCaCertificates(QStringLiteral(":certificates/rootCA.pem"));
 
     QList<QSslError> errorsToIgnore;
-    auto serverCert = QSslCertificate::fromPath(QStringLiteral(
-                                                ":certificates/server.pem"));
+    QList<QSslCertificate> serverCert =
+        QSslCertificate::fromPath(QStringLiteral(":certificates/server.pem"));
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
 
@@ -99,7 +124,6 @@ void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
 void Sender::connectToReceiver()
 {
     clientSocket.connectToHostEncrypted(peerIPAddress, PORT);
-
     clientState = ClientState::CONNECTING;
 }
 
@@ -109,13 +133,12 @@ void Sender::disconnectFromReceiver()
         return;
 
     clientSocket.abort();
-    socketDisconnected();
+    clientState = ClientState::DISCONNECTED;
 }
 
 void Sender::setPeerIPAddress(QString peerID)
 {
-    QString ip(getIPAddress());
-    QStringList ipStrList = ip.split(".");
+    QStringList ipStrList = getIPAddress().split(".");
     ipStrList.replace(3, peerID);
     peerIPAddress = ipStrList.join(".");
 }
@@ -126,11 +149,11 @@ QString Sender::getIPAddress() const
     {
         if (address.protocol() == QAbstractSocket::IPv4Protocol &&
             address != QHostAddress(QHostAddress::LocalHost) &&
-            address.toString().section( ".", -1, -1 ) != "1")
+            address.toString().section(".", -1, -1 ) != "1")
             return address.toString();
     }
 
-    return "";
+    return QStringLiteral("");
 }
 
 //-----------------------------------------------------------------------------
@@ -168,7 +191,6 @@ void Sender::handleInfo(std::shared_ptr<InfoMessage> info)
         case InfoMessage::InfoType::DEVICE_KEY:
         {
             handleDeviceKey(QString(info->info));
-
             break;
         }
         default:
@@ -193,8 +215,7 @@ void Sender::handleDeviceKey(QString deviceKey)
 
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
-
-    clientState = ClientState::ERROR;
+    clientState = ClientState::UNRECOGNIZED;
 }
 
 void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
@@ -219,7 +240,7 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
     {
         case AcknowledgeMessage::Acknowledge::ERROR:
         {
-            clientState = ClientState::ERROR;
+            clientState = ClientState::UNRECOGNIZED;
             clientSocket.disconnectFromHost();
             break;
         }

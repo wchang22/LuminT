@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSslSocket>
+#include <QTimer>
 
 #include "modules/message/messenger.hpp"
 #include "modules/qml/register_device_list.hpp"
@@ -28,6 +29,7 @@ public:
         CONNECTED,
         ENCRYPTING,
         ENCRYPTED,
+        UNRECOGNIZED,
     };
 
     void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
@@ -35,6 +37,7 @@ public:
 signals:
     void connected();
     void disconnected();
+    void connectionUnrecognized();
     void connectionError();
 
     void receivedInfo(std::shared_ptr<InfoMessage> info);
@@ -53,6 +56,9 @@ private slots:
     void socketReady();
     void socketDisconnected();
     void socketError(QAbstractSocket::SocketError error);
+
+    void encryptingTimeout();
+
     void handleReadyRead();
     void handleInfo(std::shared_ptr<InfoMessage> info);
     void handleRequest(std::shared_ptr<RequestMessage> request);
@@ -70,6 +76,8 @@ private:
     QString thisKey;
     QString peerIPAddress;
     RegisterDeviceList *registerDeviceList;
+
+    QTimer encryptingTimer;
 };
 
 #endif // SENDER_HPP

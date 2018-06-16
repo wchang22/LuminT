@@ -11,16 +11,21 @@ class TestCommunications : public QObject
     Q_OBJECT
 
 public:
+    TestCommunications();
 
 private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
-    void test_connection();
+    void test_connection_perfect();
+    void test_connection_not_encrypted();
 
 private:
     RegisterDeviceList registerDeviceList;
     Sender sender;
     Receiver receiver;
+
+    QString receiverIP;
+    QString receiverID;
 };
 
 

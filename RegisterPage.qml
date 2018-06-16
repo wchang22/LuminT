@@ -68,10 +68,10 @@ Page {
                     font.pointSize: 15
                     placeholderText: qsTr("Add 8-digit Device Key")
                     text: deviceKey
-                    echoMode: TextInput.Normal
                     Layout.preferredWidth: 360
                     Layout.preferredHeight: 40
                     Layout.fillWidth: true
+                    inputMethodHints: Qt.ImhLowercaseOnly
                     maximumLength: 8
                     selectByMouse: true
                     readOnly: readOnlyStatus

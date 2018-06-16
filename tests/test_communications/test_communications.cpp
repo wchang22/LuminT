@@ -1,10 +1,20 @@
 #include <QSignalSpy>
+#include <QLoggingCategory>
 
 #include "test_communications.hpp"
 
 const int WAIT_DURATION = 5000; // ms
+const int PORT = 4002;
 
 QTEST_MAIN(TestCommunications)
+
+TestCommunications::TestCommunications()
+    : receiverIP("")
+    , receiverID("")
+{
+    // Disable Ssl warnings
+    QLoggingCategory::setFilterRules("qt.network.ssl.warning=false");
+}
 
 void TestCommunications::initTestCase()
 {
@@ -30,7 +40,7 @@ void TestCommunications::cleanupTestCase()
 
 }
 
-void TestCommunications::test_connection()
+void TestCommunications::test_connection_perfect()
 {
     /* Successful connection process should be as follows, where
      * Sender and Receiver refer to the classes and client and socket
@@ -61,9 +71,9 @@ void TestCommunications::test_connection()
 
     // Get IP address of receiver and use it to obtain the receiver's ID
     // (Last 1-3 digits of ip address, to be entered into sender ID field)
-    QString receiverIP(receiver.getIPAddress());
+    receiverIP = receiver.getIPAddress();
     QVERIFY(receiverIP.length());
-    QString receiverID(receiverIP.split(QStringLiteral(".")).at(3));
+    receiverID = receiverIP.split(QStringLiteral(".")).at(3);
 
     // Set ipaddress is usually done by user
     sender.setPeerIPAddress(receiverID);
@@ -105,6 +115,104 @@ void TestCommunications::test_connection()
     QCOMPARE(receiver.serverState, Receiver::ServerState::ENCRYPTED);
     QVERIFY(sender.clientSocket.isEncrypted());
     QVERIFY(receiver.serverSocket->isEncrypted());
+
+    // Cut connection for next test
+    QSignalSpy receiverDisconnectedSpy(&receiver, &Receiver::disconnected);
+    QVERIFY(receiverDisconnectedSpy.isValid());
+
+    sender.clientSocket.abort();
+    QVERIFY(receiverDisconnectedSpy.wait());
+    QCOMPARE(receiverDisconnectedSpy.count(), 1);
+
+    // Check everything is now disconnected
+    QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::DISCONNECTED);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::UnconnectedState);
+}
+
+void TestCommunications::test_connection_not_encrypted()
+{
+    /* Occurs when devices connect but TLS handshake fails
+     * May occur if device accidentally connects to a non-LuminT program
+     * or if OpenSSL is not supported
+     *
+     * Connection should timeout and cut after 5s
+     */
+
+    // Test connecting a fake client to Receiver, should connect but never encrypt
+    QTcpSocket client(this);
+
+    QSignalSpy clientConnectedSpy(&client, &QTcpSocket::connected);
+    QVERIFY(clientConnectedSpy.isValid());
+
+    // Start connecting
+    client.connectToHost(QHostAddress(receiverIP), PORT);
+    QVERIFY(receiver.startServer());
+
+    // Check that both have connected successfully (not encrypted)
+    QVERIFY(clientConnectedSpy.wait());
+    QCOMPARE(clientConnectedSpy.count(), 1);
+
+    QCOMPARE(client.state(), QAbstractSocket::ConnectedState);
+
+    // Wait for Receiver to accept connection
+    for (int i = 0; i < WAIT_DURATION && receiver.isListening(); i++)
+        QTest::qWait(1);
+
+    QVERIFY(receiver.serverSocket);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::ConnectedState);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::ENCRYPTING);
+
+    // Check that receiver never encrypts
+    QSignalSpy receiverEncryptedSpy(receiver.serverSocket, &QSslSocket::encrypted);
+    QVERIFY(receiverEncryptedSpy.isValid());
+
+    QVERIFY(!receiverEncryptedSpy.wait(1000));
+    QCOMPARE(receiverEncryptedSpy.count(), 0);
+
+    // Check that waiting for encryption times out
+    QSignalSpy receiverConnectionErrorSpy(&receiver, &Receiver::connectionError);
+    QVERIFY(receiverConnectionErrorSpy.isValid());
+
+    QVERIFY(receiverConnectionErrorSpy.wait());
+    QCOMPARE(receiverConnectionErrorSpy.count(), 1);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::DISCONNECTED);
+
+
+    // Repeat the process now with a fake server
+    QTcpServer server(this);
+
+    QSignalSpy senderConnectedSpy(&sender.clientSocket, &QSslSocket::connected);
+    QVERIFY(senderConnectedSpy.isValid());
+
+    // Start connecting
+    sender.connectToReceiver();
+    QVERIFY(server.listen(QHostAddress(receiverIP), PORT));
+
+    // Check that sender has connected successfully (not encrypted)
+    QVERIFY(senderConnectedSpy.wait());
+    QCOMPARE(senderConnectedSpy.count(), 1);
+
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::ConnectedState);
+    QCOMPARE(sender.clientState, Sender::ClientState::CONNECTED);
+
+    // Check that sender never encrypts
+    QSignalSpy senderEncryptedSpy(&sender.clientSocket, &QSslSocket::encrypted);
+    QVERIFY(senderEncryptedSpy.isValid());
+
+    QVERIFY(!senderEncryptedSpy.wait(1000));
+    QCOMPARE(senderEncryptedSpy.count(), 0);
+
+    // Check that waiting for encryption times out
+    QSignalSpy senderConnectionErrorSpy(&sender, &Sender::connectionError);
+    QVERIFY(senderConnectionErrorSpy.isValid());
+
+    QVERIFY(senderConnectionErrorSpy.wait());
+    QCOMPARE(senderConnectionErrorSpy.count(), 1);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
 }
 
 

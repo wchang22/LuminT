@@ -30,6 +30,7 @@ ApplicationWindow {
         onConnected: window.push(senderComp)
         onDisconnected: window.pop(null)
         onConnectionError: window.push(connectionErrorComp)
+        onConnectionUnrecognized: window.push(connectionUnrecognizedComp)
     }
 
     Connections {
@@ -37,6 +38,7 @@ ApplicationWindow {
         onConnected: window.push(receiverComp)
         onDisconnected: window.pop(null)
         onConnectionError: window.push(connectionErrorComp)
+        onConnectionUnrecognized: window.push(connectionUnrecognizedComp)
     }
 
     header: ToolBar {
@@ -83,6 +85,11 @@ ApplicationWindow {
         Component {
             id: receiverComp
             ReceiverPage {}
+        }
+
+        Component {
+            id: connectionUnrecognizedComp
+            ConnectionUnrecognizedPage {}
         }
 
         Component {

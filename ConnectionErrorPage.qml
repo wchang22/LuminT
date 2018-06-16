@@ -12,7 +12,7 @@ Page {
 
         Label {
             id: connectionErrorLabel
-            text: qsTr("Device keys do not match.\nMake sure both are registered.")
+            text: qsTr("Encryption failed.\nPlease try again.")
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             font.bold: true
@@ -20,7 +20,7 @@ Page {
         }
 
         Button {
-            id: returnButton
+            id: connectionErrorReturnButton
             text: qsTr("Return")
             focusPolicy: Qt.NoFocus
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop

@@ -10,6 +10,7 @@
 //-----------------------------------------------------------------------------
 
 const int PORT = 4002;
+const int ENCRYPTING_TIMEOUT = 5000; // ms
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -24,11 +25,16 @@ Receiver::Receiver(QObject *parent)
     , thisID("")
     , ipAddress("")
     , registerDeviceList(nullptr)
+    , encryptingTimer(this)
 {
     connect(this, &Receiver::receivedInfo,
             this, &Receiver::handleInfo);
     connect(this, &Receiver::receivedAcknowledge,
             this, &Receiver::handleAcknowledge);
+
+    connect(&encryptingTimer, &QTimer::timeout,
+            this, &Receiver::encryptingTimeout);
+    encryptingTimer.setSingleShot(true);
 }
 
 Receiver::~Receiver()
@@ -60,9 +66,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     connect(serverSocket, &QSslSocket::disconnected,
             this, &Receiver::socketDisconnected);
 
-    addPendingConnection(serverSocket);
-
-    serverState = ServerState::ENCRYPTING;
+    this->addPendingConnection(serverSocket);
 
     QFile certFile(QStringLiteral(":certificates/server.pem"));
     QFile keyFile(QStringLiteral(":certificates/server.key"));
@@ -80,12 +84,17 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
     serverSocket->setLocalCertificate(cert);
     serverSocket->setPrivateKey(key);
-
     serverSocket->startServerEncryption();
+
+    encryptingTimer.start(ENCRYPTING_TIMEOUT);
+
+    serverState = ServerState::ENCRYPTING;
 }
 
 void Receiver::socketReady()
 {
+    encryptingTimer.stop();
+
     messenger.setDevice(serverSocket);
 
     RequestMessage requestKey(RequestMessage::Request::DEVICE_KEY);
@@ -96,8 +105,15 @@ void Receiver::socketReady()
 
 void Receiver::socketDisconnected()
 {
-    if (serverState == ServerState::ERROR)
-        emit connectionError();
+    if (serverState == ServerState::ENCRYPTING)
+        serverState = ServerState::ERROR;
+
+    stopServer();
+}
+
+void Receiver::encryptingTimeout()
+{
+    serverState = ServerState::ERROR;
 
     stopServer();
 }
@@ -135,14 +151,25 @@ bool Receiver::startServer()
 
 void Receiver::stopServer()
 {
-    if (serverState == ServerState::DISCONNECTED)
-        return;
-
-    if (serverState != ServerState::ERROR)
-        emit disconnected();
+    switch(serverState)
+    {
+        case ServerState::DISCONNECTED:
+            return;
+        case ServerState::UNRECOGNIZED:
+            emit connectionUnrecognized();
+            break;
+        case ServerState::ERROR:
+            emit connectionError();
+            break;
+        default:
+            emit disconnected();
+    }
 
     if (this->isListening())
         this->close();
+
+    if (encryptingTimer.isActive())
+        encryptingTimer.stop();
 
     if (serverState == ServerState::CONNECTING)
     {
@@ -172,7 +199,7 @@ QString Receiver::getIPAddress() const
             return address.toString();
     }
 
-    return "";
+    return QStringLiteral("");
 }
 
 QString Receiver::getThisID() const
@@ -245,7 +272,7 @@ void Receiver::handleDeviceKey(QString deviceKey)
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
 
-    serverState = ServerState::ERROR;
+    serverState = ServerState::UNRECOGNIZED;
 }
 
 void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
@@ -254,7 +281,7 @@ void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
     {
         case AcknowledgeMessage::Acknowledge::ERROR:
         {
-            serverState = ServerState::ERROR;
+            serverState = ServerState::UNRECOGNIZED;
             serverSocket->abort();
             break;
         }
