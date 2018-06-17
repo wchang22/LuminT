@@ -45,7 +45,7 @@
  *      If Sender does not recognize it, it sends an error acknowledge
  *    If Sender receives an acknowledge error message, it cuts the connection
  * 5) If Receiver receives a device key ok acknowledgement, it is now ready
- *    If Reciever receives an error acknowledge, it cuts the connection
+ *    If Receiver receives an error acknowledge, it cuts the connection
  */
 
 class Sender : public QObject

@@ -18,6 +18,7 @@ test {
     SUBDIRS += \
                tests/test_message \
                tests/test_communications \
+               tests/test_data_transfer \
 }
 
 HEADERS += \
@@ -79,4 +80,3 @@ DISTFILES += \
     android/gradlew.bat
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-

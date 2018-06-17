@@ -21,6 +21,7 @@ class RegisterDeviceList : public QObject
     Q_OBJECT
 
     friend class TestCommunications;
+    friend class TestDataTransfer;
 
 public:
     RegisterDeviceList();
