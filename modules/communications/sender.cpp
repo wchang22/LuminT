@@ -21,7 +21,6 @@ Sender::Sender(QObject *parent)
     , clientSocket()
     , clientState(ClientState::DISCONNECTED)
     , messenger()
-    , thisKey("")
     , peerIPAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
@@ -107,7 +106,7 @@ void Sender::encryptingTimeout()
 // Connection Methods
 //-----------------------------------------------------------------------------
 
-void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
+void Sender::setup(RegisterDeviceList &registerDeviceList)
 {
     clientSocket.addCaCertificates(QStringLiteral(":certificates/rootCA.pem"));
 
@@ -117,7 +116,6 @@ void Sender::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
     errorsToIgnore << QSslError(QSslError::HostNameMismatch, serverCert.at(0));
     clientSocket.ignoreSslErrors(errorsToIgnore);
 
-    this->thisKey = thisKey;
     this->registerDeviceList = &registerDeviceList;
 }
 
@@ -225,7 +223,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         case RequestMessage::Request::DEVICE_KEY:
         {
             InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
-                             thisKey.toUtf8());
+                             registerDeviceList->getThisKey().toUtf8());
             messenger.sendMessage(info);
             break;
         }

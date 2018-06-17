@@ -19,6 +19,9 @@ struct RegisterDeviceItem
 class RegisterDeviceList : public QObject
 {
     Q_OBJECT
+
+    friend class TestCommunications;
+
 public:
     RegisterDeviceList();
     ~RegisterDeviceList();

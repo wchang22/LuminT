@@ -18,9 +18,11 @@ private Q_SLOTS:
     void cleanupTestCase();
     void test_connection_perfect();
     void test_connection_not_encrypted();
+    void test_key_verification();
 
 private:
-    RegisterDeviceList registerDeviceList;
+    RegisterDeviceList senderRegisterDeviceList;
+    RegisterDeviceList receiverRegisterDeviceList;
     Sender sender;
     Receiver receiver;
 

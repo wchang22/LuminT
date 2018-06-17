@@ -32,7 +32,7 @@ public:
         UNRECOGNIZED,
     };
 
-    void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
+    void setup(RegisterDeviceList &registerDeviceList);
 
 signals:
     void connected();
@@ -73,7 +73,6 @@ private:
 
     Messenger messenger;
 
-    QString thisKey;
     QString peerIPAddress;
     RegisterDeviceList *registerDeviceList;
 

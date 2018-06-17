@@ -9,7 +9,11 @@ const int PORT = 4002;
 QTEST_MAIN(TestCommunications)
 
 TestCommunications::TestCommunications()
-    : receiverIP("")
+    : senderRegisterDeviceList()
+    , receiverRegisterDeviceList()
+    , sender()
+    , receiver()
+    , receiverIP("")
     , receiverID("")
 {
     // Disable Ssl warnings
@@ -25,10 +29,14 @@ void TestCommunications::initTestCase()
     QCOMPARE(receiver.serverSocket, nullptr);
 
     // Generate config file with device key and setup sockets and IP addresses
-    registerDeviceList.generateConf();
-    registerDeviceList.readDeviceItems();
-    sender.setup(registerDeviceList.getThisKey(), registerDeviceList);
-    receiver.setup(registerDeviceList.getThisKey(), registerDeviceList);
+
+    senderRegisterDeviceList.generateConf();
+    senderRegisterDeviceList.readDeviceItems();
+    QVERIFY(QFile::remove(CONFIG_FILE_NAME));
+    receiverRegisterDeviceList.generateConf();
+    receiverRegisterDeviceList.readDeviceItems();
+    sender.setup(senderRegisterDeviceList);
+    receiver.setup(receiverRegisterDeviceList);
 
     // Check that neither are in error state, which may occur if no internet
     QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
@@ -42,7 +50,8 @@ void TestCommunications::cleanupTestCase()
 
 void TestCommunications::test_connection_perfect()
 {
-    /* Successful connection process should be as follows, where
+    /*
+     * Successful connection process should be as follows, where
      * Sender and Receiver refer to the classes and client and socket
      * refer to their respective sockets
      *
@@ -133,7 +142,8 @@ void TestCommunications::test_connection_perfect()
 
 void TestCommunications::test_connection_not_encrypted()
 {
-    /* Occurs when devices connect but TLS handshake fails
+    /*
+     * Occurs when TCP connection succeeds but TLS handshake fails
      * May occur if device accidentally connects to a non-LuminT program
      * or if OpenSSL is not supported
      *
@@ -213,6 +223,108 @@ void TestCommunications::test_connection_not_encrypted()
     QCOMPARE(senderConnectionErrorSpy.count(), 1);
     QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
     QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
+}
+
+void TestCommunications::test_key_verification()
+{
+    /*
+     * After successful encryption, key verification should follow:
+     *
+     * 1) Receiver sends a request for Sender's key
+     * 2) Sender sends its key in an info message
+     * 3) If Receiver has Sender's key in its list of recognized keys,
+     *      Receiver sends its own key to Sender in an info message
+     *    If Receiver does not, it sends an error acknowledge message
+     * 4) If Sender receives Receiver's key, it checks with its list
+     *      If Sender recognizes it, it sends a device key ok acknowledgement
+     *          and is now ready
+     *      If Sender does not recognize it, it sends an error acknowledge
+     *    If Sender receives an acknowledge error message, it cuts the connection
+     * 5) If Receiver receives a device key ok acknowledgement, it is now ready
+     *    If Reciever receives an error acknowledge, it cuts the connection
+     */
+
+    // Connect sender and receiver and make sure both are encrypted
+    sender.connectToReceiver();
+    QVERIFY(receiver.startServer());
+
+    // If neither keys are registered, connection should be cut
+    QSignalSpy receiverConnectionUnrecognizedSpy(
+                    &receiver, &Receiver::connectionUnrecognized);
+    QSignalSpy senderConnectionUnrecognizedSpy(
+                    &sender, &Sender::connectionUnrecognized);
+    QVERIFY(receiverConnectionUnrecognizedSpy.isValid());
+    QVERIFY(senderConnectionUnrecognizedSpy.isValid());
+
+    QVERIFY(receiverConnectionUnrecognizedSpy.wait());
+    QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
+    QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
+    receiverConnectionUnrecognizedSpy.clear();
+    senderConnectionUnrecognizedSpy.clear();
+    QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::DISCONNECTED);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::UnconnectedState);
+
+    // If one key is registered, connection should also be cut
+    senderRegisterDeviceList.deviceItems.append({
+         receiverRegisterDeviceList.getThisKey(), true,
+         1, QStringLiteral("\u2013") });
+
+    sender.connectToReceiver();
+    QVERIFY(receiver.startServer());
+
+    QVERIFY(receiverConnectionUnrecognizedSpy.wait());
+    QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
+    QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
+    receiverConnectionUnrecognizedSpy.clear();
+    senderConnectionUnrecognizedSpy.clear();
+    QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::DISCONNECTED);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::UnconnectedState);
+
+    // Same, but with the other key registered
+    senderRegisterDeviceList.deviceItems.removeLast();
+    receiverRegisterDeviceList.deviceItems.append({
+         senderRegisterDeviceList.getThisKey(), true,
+         1, QStringLiteral("\u2013") });
+
+    sender.connectToReceiver();
+    QVERIFY(receiver.startServer());
+
+    QVERIFY(receiverConnectionUnrecognizedSpy.wait());
+    QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
+    QVERIFY(senderConnectionUnrecognizedSpy.wait());
+    QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
+    receiverConnectionUnrecognizedSpy.clear();
+    senderConnectionUnrecognizedSpy.clear();
+    QCOMPARE(sender.clientState, Sender::ClientState::DISCONNECTED);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::DISCONNECTED);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::UnconnectedState);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::UnconnectedState);
+
+    // Connection should succeed if both are registered
+    QSignalSpy senderConnectedSpy(&sender, &Sender::connected);
+    QSignalSpy receiverConnectedSpy(&receiver, &Receiver::connected);
+    QVERIFY(senderConnectedSpy.isValid());
+    QVERIFY(receiverConnectedSpy.isValid());
+
+    senderRegisterDeviceList.deviceItems.append({
+         receiverRegisterDeviceList.getThisKey(), true,
+         1, QStringLiteral("\u2013") });
+
+    sender.connectToReceiver();
+    QVERIFY(receiver.startServer());
+
+    QVERIFY(senderConnectedSpy.wait());
+    QCOMPARE(senderConnectedSpy.count(), 1);
+    QVERIFY(receiverConnectedSpy.wait());
+    QCOMPARE(receiverConnectedSpy.count(), 1);
+    QCOMPARE(sender.clientState, Sender::ClientState::ENCRYPTED);
+    QCOMPARE(receiver.serverState, Receiver::ServerState::ENCRYPTED);
+    QCOMPARE(sender.clientSocket.state(), QAbstractSocket::ConnectedState);
+    QCOMPARE(receiver.serverSocket->state(), QAbstractSocket::ConnectedState);
 }
 
 

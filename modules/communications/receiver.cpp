@@ -21,7 +21,6 @@ Receiver::Receiver(QObject *parent)
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
     , messenger()
-    , thisKey("")
     , thisID("")
     , ipAddress("")
     , registerDeviceList(nullptr)
@@ -122,7 +121,7 @@ void Receiver::encryptingTimeout()
 // Connection Methods
 //-----------------------------------------------------------------------------
 
-void Receiver::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
+void Receiver::setup(RegisterDeviceList &registerDeviceList)
 {
     ipAddress = getIPAddress();
 
@@ -132,7 +131,6 @@ void Receiver::setup(QString thisKey, RegisterDeviceList &registerDeviceList)
         return;
     }
 
-    this->thisKey = thisKey;
     this->thisID = ipAddress.split(".").at(3);
     this->registerDeviceList = &registerDeviceList;
 }
@@ -264,7 +262,7 @@ void Receiver::handleDeviceKey(QString deviceKey)
             continue;
 
         InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
-                         thisKey.toUtf8());
+                         registerDeviceList->getThisKey().toUtf8());
         messenger.sendMessage(info);
         return;
     }

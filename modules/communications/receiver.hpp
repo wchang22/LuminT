@@ -33,7 +33,7 @@ public:
     };
     Q_ENUM(ServerState)
 
-    void setup(QString thisKey, RegisterDeviceList &registerDeviceList);
+    void setup(RegisterDeviceList &registerDeviceList);
 
 protected:
     void incomingConnection(qintptr serverSocketDescriptor) override;
@@ -75,7 +75,6 @@ private:
 
     Messenger messenger;
 
-    QString thisKey;
     QString thisID;
     QString ipAddress;
     RegisterDeviceList *registerDeviceList;
