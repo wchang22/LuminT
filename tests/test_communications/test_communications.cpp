@@ -241,7 +241,7 @@ void TestCommunications::test_key_verification()
      *      If Sender does not recognize it, it sends an error acknowledge
      *    If Sender receives an acknowledge error message, it cuts the connection
      * 5) If Receiver receives a device key ok acknowledgement, it is now ready
-     *    If Reciever receives an error acknowledge, it cuts the connection
+     *    If Receiver receives an error acknowledge, it cuts the connection
      */
 
     // Connect sender and receiver and make sure both are encrypted
@@ -256,6 +256,8 @@ void TestCommunications::test_key_verification()
     QVERIFY(receiverConnectionUnrecognizedSpy.isValid());
     QVERIFY(senderConnectionUnrecognizedSpy.isValid());
 
+    // Receiver sends request, Sender sends key, Receiver sends ack error
+    // Sender cuts connection, Receiver is the second to emit unrecognized
     QVERIFY(receiverConnectionUnrecognizedSpy.wait());
     QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
     QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
@@ -274,6 +276,8 @@ void TestCommunications::test_key_verification()
     sender.connectToReceiver();
     QVERIFY(receiver.startServer());
 
+    // Receiver sends request, Sender sends key, Receiver sends ack error
+    // Sender cuts connection, Receiver is the second to emit unrecognized
     QVERIFY(receiverConnectionUnrecognizedSpy.wait());
     QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
     QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
@@ -293,9 +297,11 @@ void TestCommunications::test_key_verification()
     sender.connectToReceiver();
     QVERIFY(receiver.startServer());
 
-    QVERIFY(receiverConnectionUnrecognizedSpy.wait());
-    QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
+    // Receiver sends request, Sender sends key, Receiver sends key,
+    // Sender sends ack error
+    // Receiver cuts connection, Sender is the second to emit unrecognized
     QVERIFY(senderConnectionUnrecognizedSpy.wait());
+    QCOMPARE(receiverConnectionUnrecognizedSpy.count(), 1);
     QCOMPARE(senderConnectionUnrecognizedSpy.count(), 1);
     receiverConnectionUnrecognizedSpy.clear();
     senderConnectionUnrecognizedSpy.clear();
@@ -317,9 +323,11 @@ void TestCommunications::test_key_verification()
     sender.connectToReceiver();
     QVERIFY(receiver.startServer());
 
-    QVERIFY(senderConnectedSpy.wait());
-    QCOMPARE(senderConnectedSpy.count(), 1);
+    // Receiver sends request, Sender sends key, Receiver sends key,
+    // Sender sends device key ok ack, Sender is now ready
+    // Receiver receives ack, Receiver is the second to emit connected
     QVERIFY(receiverConnectedSpy.wait());
+    QCOMPARE(senderConnectedSpy.count(), 1);
     QCOMPARE(receiverConnectedSpy.count(), 1);
     QCOMPARE(sender.clientState, Sender::ClientState::ENCRYPTED);
     QCOMPARE(receiver.serverState, Receiver::ServerState::ENCRYPTED);

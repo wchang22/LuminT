@@ -41,7 +41,7 @@ Sender::Sender(QObject *parent)
 
     connect(&encryptingTimer, &QTimer::timeout,
             this, &Sender::encryptingTimeout);
-    encryptingTimer.setSingleShot(true);
+    encryptingTimer.setSingleShot(true); // timer fires only once
 }
 
 Sender::~Sender()
@@ -91,6 +91,7 @@ void Sender::socketDisconnected()
 
 void Sender::socketError(QAbstractSocket::SocketError error)
 {
+    // Receiver has not started listening yet, continue attempting to connect
     if (error == QAbstractSocket::SocketError::ConnectionRefusedError)
         connectToReceiver();
 }
@@ -108,8 +109,11 @@ void Sender::encryptingTimeout()
 
 void Sender::setup(RegisterDeviceList &registerDeviceList)
 {
+    // Sets up CA certificate
     clientSocket.addCaCertificates(QStringLiteral(":certificates/rootCA.pem"));
 
+    // Does not matter if Receiver's hostname does not match the one listed in
+    // the certificate
     QList<QSslError> errorsToIgnore;
     QList<QSslCertificate> serverCert =
         QSslCertificate::fromPath(QStringLiteral(":certificates/server.pem"));
@@ -136,6 +140,8 @@ void Sender::disconnectFromReceiver()
 
 void Sender::setPeerIPAddress(QString peerID)
 {
+    // Replace the last part of Sender's IP address with Receiver's ID
+    // to obtain Receiver's IP address
     QStringList ipStrList = getIPAddress().split(".");
     ipStrList.replace(3, peerID);
     peerIPAddress = ipStrList.join(".");
@@ -145,12 +151,16 @@ QString Sender::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
     {
+        // IP address should not be 127.0.0.1 (localhost) or end in 1,
+        // which are usually gateways or IP addresses of virtual machines
         if (address.protocol() == QAbstractSocket::IPv4Protocol &&
             address != QHostAddress(QHostAddress::LocalHost) &&
             address.toString().section(".", -1, -1 ) != "1")
             return address.toString();
     }
 
+    // If there are no valid IPv4 address, return a blank string
+    // Most commonly occurs when device is not connected to internet
     return QStringLiteral("");
 }
 
@@ -200,6 +210,7 @@ void Sender::handleDeviceKey(QString deviceKey)
 {
     const int deviceItemsSize = registerDeviceList->items().size();
 
+    // Check if device key is registered
     for (int i = 1; i < deviceItemsSize; i++)
     {
         if (registerDeviceList->items().at(i).deviceKey != deviceKey)
@@ -211,6 +222,7 @@ void Sender::handleDeviceKey(QString deviceKey)
         return;
     }
 
+    // If device key is not registered, send error
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
     clientState = ClientState::UNRECOGNIZED;

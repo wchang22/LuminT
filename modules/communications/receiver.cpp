@@ -33,7 +33,7 @@ Receiver::Receiver(QObject *parent)
 
     connect(&encryptingTimer, &QTimer::timeout,
             this, &Receiver::encryptingTimeout);
-    encryptingTimer.setSingleShot(true);
+    encryptingTimer.setSingleShot(true); // timer fires only once
 }
 
 Receiver::~Receiver()
@@ -55,6 +55,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
     serverSocket = new QSslSocket(this);
 
+    // Attempts to connect serverSocket to clientSocket of Sender
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
         return;
 
@@ -67,6 +68,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
     this->addPendingConnection(serverSocket);
 
+    // Opens SSL certificate and key for TLS handshake
     QFile certFile(QStringLiteral(":certificates/server.pem"));
     QFile keyFile(QStringLiteral(":certificates/server.key"));
     if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
@@ -85,6 +87,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     serverSocket->setPrivateKey(key);
     serverSocket->startServerEncryption();
 
+    // Start 5s timer for encryption
     encryptingTimer.start(ENCRYPTING_TIMEOUT);
 
     serverState = ServerState::ENCRYPTING;
@@ -92,6 +95,8 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 
 void Receiver::socketReady()
 {
+    // Devices are now encrypted, start key verification process
+
     encryptingTimer.stop();
 
     messenger.setDevice(serverSocket);
@@ -125,6 +130,7 @@ void Receiver::setup(RegisterDeviceList &registerDeviceList)
 {
     ipAddress = getIPAddress();
 
+    // If IP address is blank, internet is not connected, got into ERROR state
     if (ipAddress.length() == 0)
     {
         serverState = ServerState::ERROR;
@@ -191,12 +197,16 @@ QString Receiver::getIPAddress() const
 {
     foreach (const QHostAddress &address, QNetworkInterface::allAddresses())
     {
+        // IP address should not be 127.0.0.1 (localhost) or end in 1,
+        // which are usually gateways or IP addresses of virtual machines
         if (address.protocol() == QAbstractSocket::IPv4Protocol &&
             address != QHostAddress(QHostAddress::LocalHost) &&
             address.toString().section(".", -1, -1 ) != "1")
             return address.toString();
     }
 
+    // If there are no valid IPv4 address, return a blank string
+    // Most commonly occurs when device is not connected to internet
     return QStringLiteral("");
 }
 
@@ -256,6 +266,7 @@ void Receiver::handleDeviceKey(QString deviceKey)
 {
     const int deviceItemsSize = registerDeviceList->items().size();
 
+    // Check if device key is registered
     for (int i = 1; i < deviceItemsSize; i++)
     {
         if (registerDeviceList->items().at(i).deviceKey != deviceKey)
@@ -267,9 +278,9 @@ void Receiver::handleDeviceKey(QString deviceKey)
         return;
     }
 
+    // If device key is not registered, send error
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
-
     serverState = ServerState::UNRECOGNIZED;
 }
 
