@@ -1,12 +1,26 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
+import Qt.labs.platform 1.0
 
 ScrollView {
     Page {
         id: receiverPage
         padding: 30
         objectName: "receiverPage"
+
+        FolderDialog {
+            id: receiverFolderDialog
+            title: qsTr("Select a folder")
+            folder: StandardPaths.standardLocations(
+                        StandardPaths.DocumentsLocation)[0]
+            onAccepted: {
+                var folderPath = receiverFolderDialog.folder.toString()
+                folderPath = folderPath.replace(/^(file:\/{3})/,"")
+                folderPath = decodeURIComponent(folderPath)
+                receiveFolderNameField.text = folderPath
+            }
+        }
 
         Connections {
             target: receiver
@@ -75,13 +89,13 @@ ScrollView {
             }
 
             ColumnLayout {
-                id: receiveFileColumnLayout
+                id: receiveFolderColumnLayout
                 Layout.fillWidth: true
                 spacing: 20
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                 Label {
-                    id: receiveFileLabel
+                    id: receiveFolderLabel
                     text: qsTr("Receive File")
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     font.bold: true
@@ -89,7 +103,7 @@ ScrollView {
                 }
 
                 Row {
-                    id: receiveFileRow
+                    id: receiveFolderRow
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     Layout.fillWidth: false
                     Label {
@@ -100,19 +114,28 @@ ScrollView {
                         horizontalAlignment: Text.AlignHCenter
                     }
 
-                    Label {
-                        id: receiveFileNameField
+                    TextField {
+                        id: receiveFolderNameField
                         width: 232
-                        text: qsTr("")
                         anchors.verticalCenter: parent.verticalCenter
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
+                        readOnly: true
+                        selectByMouse: true
+                        Component.onCompleted: {
+                            var documents = StandardPaths.standardLocations(
+                                                StandardPaths.DocumentsLocation)[0]
+                            documents = documents.replace(/^(file:\/{3})/,"")
+                            documents = decodeURIComponent(documents)
+                            receiveFolderNameField.text = documents
+                        }
                     }
 
                     Button {
-                        id: receiveFileBrowseButton
+                        id: receiveFolderBrowseButton
                         width: 75
                         text: qsTr("Browse")
+                        onClicked: receiverFolderDialog.open()
                     }
                     spacing: 10
                 }

@@ -1,13 +1,13 @@
 #include "text_message.hpp"
 
 TextMessage::TextMessage(QString &text)
+    : text(text)
 {
-    this->text = text;
 }
 
 TextMessage::TextMessage(QByteArray &textBytes)
+    : text(textBytes)
 {
-    this->text.append(textBytes);
 }
 
 TextMessage::~TextMessage()

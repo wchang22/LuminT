@@ -1,12 +1,25 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
+import QtQuick.Dialogs 1.2
 
 ScrollView {
     Page {
         id: senderPage
         padding: 30
         objectName: "senderPage"
+
+        FileDialog {
+            id: senderFileDialog
+            title: qsTr("Select a file")
+            folder: shortcuts.documents
+            onAccepted: {
+                var filePath = senderFileDialog.fileUrl.toString()
+                filePath = filePath.replace(/^(file:\/{3})/,"")
+                filePath = decodeURIComponent(filePath)
+                sendFileNameField.text = filePath
+            }
+        }
 
         ColumnLayout {
             id: senderColumnLayout
@@ -101,25 +114,32 @@ ScrollView {
                         horizontalAlignment: Text.AlignHCenter
                     }
 
-                    Label {
+                    TextField {
                         id: sendFileNameField
                         width: 200
                         text: qsTr("")
                         anchors.verticalCenter: parent.verticalCenter
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
+                        readOnly: true
+                        selectByMouse: true
                     }
 
                     Button {
                         id: sendFileBrowseButton
                         width: 75
                         text: qsTr("Browse")
+                        onClicked: senderFileDialog.visible = true
                     }
 
                     Button {
                         id: sendFileButton
                         width: 75
                         text: qsTr("Send")
+                        onClicked: {
+                            if (sendFileNameField.text.length != 0)
+                                sender.sendFile(sendFileNameField.text)
+                        }
                     }
                     spacing: 10
                 }

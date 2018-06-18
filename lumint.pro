@@ -32,7 +32,8 @@ HEADERS += \
     modules/message/info_message.hpp \
     modules/message/acknowledge_message.hpp \
     modules/message/text_message.hpp \
-    modules/utilities/utilities.hpp
+    modules/utilities/utilities.hpp \
+    modules/message/file_message.hpp
 
 
 SOURCES += main.cpp \
@@ -45,7 +46,8 @@ SOURCES += main.cpp \
     modules/message/info_message.cpp \
     modules/message/acknowledge_message.cpp \
     modules/message/text_message.cpp \
-    modules/utilities/utilities.cpp
+    modules/utilities/utilities.cpp \
+    modules/message/file_message.cpp
 
 RESOURCES += qml.qrc
 

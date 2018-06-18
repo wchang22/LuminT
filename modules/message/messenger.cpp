@@ -4,11 +4,14 @@
 #include "acknowledge_message.hpp"
 #include "text_message.hpp"
 
-const int BYTE = 8;
-const int MESSAGE_ID_BYTES = 1;
-const int MESSAGE_SIZE_BYTES = 2;
-const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_BYTES + MESSAGE_SIZE_BYTES;
-const int MESSAGE_SIZE_INT = pow(2, MESSAGE_SIZE_BYTES * BYTE);
+namespace MessageSize
+{
+    const int BYTE = 8;
+    const int MESSAGE_ID_BYTES = 1;
+    const int MESSAGE_SIZE_BYTES = 2;
+    const int MESSAGE_CONTENT_OFFSET = MESSAGE_ID_BYTES + MESSAGE_SIZE_BYTES;
+    const int MESSAGE_SIZE_INT = pow(2, MESSAGE_SIZE_BYTES * BYTE);
+}
 
 void Messenger::setDevice(QSslSocket *device)
 {
@@ -21,14 +24,30 @@ bool Messenger::frame(Message &message)
     messageData.append(message.serialize());
 
     int messageSize = messageData.size();
-    if (messageSize <= 0 || messageSize > MESSAGE_SIZE_INT - 1)
+    if (messageSize <= 0 || messageSize > MessageSize::MESSAGE_SIZE_INT - 1)
         return false;
 
-    for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
+    for (int i = 0; i < MessageSize::MESSAGE_SIZE_BYTES; i++)
         messageData.prepend(static_cast<char>(
-                           (messageSize >> (i * BYTE)) & 0xFF));
+                           (messageSize >> (i * MessageSize::BYTE)) & 0xFF));
 
     messageData.prepend(static_cast<char>(message.type()));
+
+    return true;
+}
+
+bool Messenger::frame(FileMessage &message)
+{
+    messageData.clear();
+    messageData.append(message.serialize());
+
+    int messageSize = messageData.size();
+    if (messageSize <= 0 || messageSize > FileSize::PACKET_BYTES - 1)
+        return false;
+
+    for (int i = 0; i < FileSize::SEQ_BYTES; i++)
+        messageData.prepend(static_cast<char>(
+                           (message.seq >> (i * FileSize::BYTE)) & 0xFF));
 
     return true;
 }
@@ -49,9 +68,25 @@ bool Messenger::sendMessage(Message &message)
     return true;
 }
 
+bool Messenger::sendMessage(FileMessage &message)
+{
+    if (!frame(message))
+        return false;
+
+    const int bytesWritten = dataStream.writeRawData(
+                                reinterpret_cast<const char*>(
+                                messageData.constData()),
+                                messageData.size());
+
+    if (bytesWritten != messageData.size())
+        return false;
+
+    return true;
+}
+
 std::shared_ptr<Message> Messenger::retrieveMessage()
 {
-    QByteArray message(messageData.mid(MESSAGE_CONTENT_OFFSET));
+    QByteArray message(messageData.mid(MessageSize::MESSAGE_CONTENT_OFFSET));
 
     switch (static_cast<Message::MessageID>(messageData.at(0)))
     {
@@ -68,6 +103,11 @@ std::shared_ptr<Message> Messenger::retrieveMessage()
     }
 }
 
+std::shared_ptr<FileMessage> Messenger::retrieveFile()
+{
+    return std::make_shared<FileMessage>(messageData);
+}
+
 bool Messenger::readMessage()
 {
     messageData.clear();
@@ -76,25 +116,28 @@ bool Messenger::readMessage()
 
     dataStream.startTransaction();
 
-    messageID.resize(MESSAGE_ID_BYTES);
+    messageID.resize(MessageSize::MESSAGE_ID_BYTES);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()),
-                               MESSAGE_ID_BYTES) != MESSAGE_ID_BYTES)
+                               MessageSize::MESSAGE_ID_BYTES) !=
+                               MessageSize::MESSAGE_ID_BYTES)
         return false;
 
     messageData.append(messageID);
 
-    messageSize.resize(MESSAGE_SIZE_BYTES);
+    messageSize.resize(MessageSize::MESSAGE_SIZE_BYTES);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageSize.data()),
-                               MESSAGE_SIZE_BYTES) != MESSAGE_SIZE_BYTES)
+                               MessageSize::MESSAGE_SIZE_BYTES) !=
+                               MessageSize::MESSAGE_SIZE_BYTES)
         return false;
 
     messageData.append(messageSize);
 
     int messageContentSize = 0;
 
-    for (int i = 0; i < MESSAGE_SIZE_BYTES; i++)
+    for (int i = 0; i < MessageSize::MESSAGE_SIZE_BYTES; i++)
          messageContentSize += (messageSize.at(i) <<
-                               ((MESSAGE_SIZE_BYTES  - i - 1) * BYTE));
+                               ((MessageSize::MESSAGE_SIZE_BYTES  - i - 1) *
+                                 MessageSize::BYTE));
 
     messageContent.resize(messageContentSize);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
@@ -109,9 +152,38 @@ bool Messenger::readMessage()
     return true;
 }
 
+bool Messenger::readFile(uint32_t packetSize)
+{
+    messageData.clear();
+
+    QByteArray messageSeq, messageContent;
+
+    dataStream.startTransaction();
+
+    messageSeq.resize(FileSize::SEQ_BYTES);
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageSeq.data()),
+                               FileSize::SEQ_BYTES) !=
+                               FileSize::SEQ_BYTES)
+        return false;
+
+    messageData.append(messageSeq);
+
+    messageContent.resize(packetSize);
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
+                               packetSize) != packetSize)
+        return false;
+
+    messageData.append(messageContent);
+
+    if (!dataStream.commitTransaction())
+        return false;
+
+    return true;
+}
+
 Message::MessageID Messenger::messageType() const
 {
-    if (messageData.size() < MESSAGE_CONTENT_OFFSET)
+    if (messageData.size() < MessageSize::MESSAGE_CONTENT_OFFSET)
         return Message::MessageID::INVALID;
 
     return static_cast<Message::MessageID>(messageData.at(0));

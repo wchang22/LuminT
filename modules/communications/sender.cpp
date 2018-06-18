@@ -4,6 +4,7 @@
 #include "sender.hpp"
 #include "modules/qml/register_device_list.hpp"
 #include "modules/message/text_message.hpp"
+#include "modules/message/file_message.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -266,4 +267,9 @@ bool Sender::sendTextMessage(QString text)
         return false;
 
     return true;
+}
+
+bool Sender::sendFile(QString filePath)
+{
+
 }

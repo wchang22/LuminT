@@ -1,13 +1,13 @@
 #include "request_message.hpp"
 
 RequestMessage::RequestMessage(Request request)
+    : request(request)
 {
-    this->request = request;
 }
 
 RequestMessage::RequestMessage(QByteArray &requestBytes)
+    : request(static_cast<Request>(requestBytes.at(0)))
 {
-    this->request = static_cast<Request>(requestBytes.at(0));
 }
 
 RequestMessage::~RequestMessage()

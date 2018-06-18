@@ -97,6 +97,7 @@ public slots:
     // Sets Receiver's IP address using Receiver's ID
     void setPeerIPAddress(QString peerID);
     bool sendTextMessage(QString text);
+    bool sendFile(QString filePath);
 
 private slots:
     void socketConnected(); // Socket has been connected

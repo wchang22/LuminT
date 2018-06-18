@@ -1,13 +1,13 @@
 #include "acknowledge_message.hpp"
 
 AcknowledgeMessage::AcknowledgeMessage(Acknowledge ack)
+    : ack(ack)
 {
-    this->ack = ack;
 }
 
 AcknowledgeMessage::AcknowledgeMessage(QByteArray &ackBytes)
+    : ack(static_cast<Acknowledge>(ackBytes.at(0)))
 {
-    this->ack = static_cast<Acknowledge>(ackBytes.at(0));
 }
 
 AcknowledgeMessage::~AcknowledgeMessage()
