@@ -137,6 +137,8 @@ private:
     RegisterDeviceList *registerDeviceList;
 
     QTimer encryptingTimer;
+
+    QString currentFilePath;
 };
 
 #endif // SENDER_HPP

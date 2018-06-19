@@ -3,6 +3,8 @@ import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 import Qt.labs.platform 1.0
 
+import utilities 1.0
+
 ScrollView {
     Page {
         id: receiverPage
@@ -19,6 +21,8 @@ ScrollView {
                 folderPath = folderPath.replace(/^(file:\/{3})/,"")
                 folderPath = decodeURIComponent(folderPath)
                 receiveFolderNameField.text = folderPath
+
+                receiver.setFilePath(folderPath)
             }
         }
 

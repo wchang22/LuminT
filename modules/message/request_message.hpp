@@ -19,6 +19,7 @@ public:
     };
 
     RequestMessage(Request request);
+    RequestMessage(Request request, QByteArray requestInfo);
     RequestMessage(QByteArray &requestBytes);
 
     ~RequestMessage();
@@ -28,6 +29,7 @@ public:
     QByteArray serialize();
 
     Request request;
+    QByteArray requestInfo;
 };
 
 #endif // REQUEST_MESSAGE_HPP

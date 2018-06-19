@@ -13,6 +13,7 @@ public:
     enum class InfoType : char
     {
         DEVICE_KEY, // Device key of sender
+        FILE_INFO,
     };
 
     InfoMessage(InfoType infoType, QByteArray info);

@@ -8,6 +8,7 @@
 #include "modules/message/messenger.hpp"
 #include "modules/message/info_message.hpp"
 #include "modules/message/acknowledge_message.hpp"
+#include "modules/message/request_message.hpp"
 #include "modules/message/text_message.hpp"
 #include "modules/qml/register_device_list.hpp"
 
@@ -72,6 +73,12 @@ public:
     };
     Q_ENUM(ServerState) // Q_ENUM macro exposes this enum to qml
 
+    enum class MessageState : uint8_t
+    {
+        MESSAGE,
+        FILE,
+    };
+
     /*!
      * \brief setup, sets up Receiver's IP and ID (last 1-3 digits of IP)
      * \details if internet is not connected, IP address will be a blank string
@@ -101,6 +108,9 @@ signals:
     void receivedInfo(std::shared_ptr<InfoMessage> info);
     void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
     void receivedText(QString text);
+    void receivedPacket(std::shared_ptr<FileMessage> packet);
+
+    void fileCompleted();
 
 public slots:
     // Allows qml to query Receiver's state to check for errors
@@ -111,6 +121,8 @@ public slots:
 
     // Allows qml to query Receiver's ID, the last 1-3 digits of its IP
     QString getThisID() const;
+
+    void setFilePath(QString path);
 
 private slots:
     void socketReady(); // Socket has been encrypted
@@ -124,6 +136,10 @@ private slots:
     void handleReadyRead();
     void handleInfo(std::shared_ptr<InfoMessage> info);
     void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
+    void handlePacket(std::shared_ptr<FileMessage> packet);
+
+    bool createFile(QString name);
+    void saveFile();
 
 private:
     QString getIPAddress() const; // Returns device's current IP address
@@ -137,8 +153,11 @@ private:
      */
     void handleDeviceKey(QString deviceKey);
 
+    void handleFileInfo(QByteArray info);
+
     QSslSocket *serverSocket;
     ServerState serverState;
+    MessageState messageState;
 
     Messenger messenger;
 
@@ -147,6 +166,11 @@ private:
     RegisterDeviceList *registerDeviceList;
 
     QTimer encryptingTimer;
+
+    uint32_t currentFileSize;
+    uint32_t currentPacketNumber;
+    QString currentPath;
+    QFile currentFile;
 };
 
 #endif // RECEIVER_HPP

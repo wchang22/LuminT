@@ -9,6 +9,7 @@ namespace FileSize
     const int BYTE = 8;
     const int SEQ_BYTES = 2;
     const int PACKET_BYTES = 5 * pow(1024, 2);
+    const uint32_t MAX_FILE_SIZE = UINT32_MAX;
 }
 
 class FileMessage
@@ -19,10 +20,8 @@ public:
 
     QByteArray serialize();
 
-    QString filePath;
     uint16_t seq;
     QFile file;
-    uint64_t fileSize;
     QByteArray fileData;
 };
 

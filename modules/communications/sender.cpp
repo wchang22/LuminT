@@ -1,10 +1,12 @@
 #include <QFile>
 #include <QNetworkInterface>
+#include <QDir>
 
 #include "sender.hpp"
 #include "modules/qml/register_device_list.hpp"
 #include "modules/message/text_message.hpp"
 #include "modules/message/file_message.hpp"
+#include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -25,6 +27,7 @@ Sender::Sender(QObject *parent)
     , peerIPAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
+    , currentFilePath("")
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -240,6 +243,13 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
             messenger.sendMessage(info);
             break;
         }
+        case RequestMessage::Request::FILE_PACKET:
+        {
+            FileMessage filePacket(currentFilePath,
+                                   request->requestInfo.toInt());
+            messenger.sendMessage(filePacket);
+            break;
+        }
         default:
             break;
     }
@@ -271,5 +281,23 @@ bool Sender::sendTextMessage(QString text)
 
 bool Sender::sendFile(QString filePath)
 {
+    currentFilePath = filePath;
 
+    QFile file(currentFilePath);
+    QString fileName = currentFilePath.split("/").last();
+    qint64 fileSize = file.size();
+
+    if (fileSize > FileSize::MAX_FILE_SIZE)
+        return false;
+
+    QByteArray info;
+    info.append(Utilities::uint32ToByteArray(fileSize));
+    info.append(fileName);
+
+    InfoMessage fileInfo(InfoMessage::InfoType::FILE_INFO, info);
+
+    if (!messenger.sendMessage(fileInfo))
+        return false;
+
+    return true;
 }

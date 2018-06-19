@@ -1,10 +1,8 @@
 #include "file_message.hpp"
 
 FileMessage::FileMessage(QString &filePath, uint16_t seq)
-    : filePath(filePath)
-    , seq(seq)
+    : seq(seq)
     , file(filePath)
-    , fileSize(file.size())
 
 {
 }

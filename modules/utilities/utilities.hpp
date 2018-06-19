@@ -10,6 +10,9 @@ class Utilities : public QObject
 public:
     Utilities(QClipboard *clipboard);
 
+    static QByteArray uint32ToByteArray(uint32_t integer);
+    static uint32_t byteArrayToUint32(QByteArray byteArray);
+
 public slots:
     QString paste() const;
     void copy(QString text);

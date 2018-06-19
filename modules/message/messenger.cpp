@@ -155,6 +155,7 @@ bool Messenger::readMessage()
 bool Messenger::readFile(uint32_t packetSize)
 {
     messageData.clear();
+    dataStream.resetStatus();
 
     QByteArray messageSeq, messageContent;
 
@@ -164,19 +165,36 @@ bool Messenger::readFile(uint32_t packetSize)
     if (dataStream.readRawData(reinterpret_cast<char*>(messageSeq.data()),
                                FileSize::SEQ_BYTES) !=
                                FileSize::SEQ_BYTES)
+    {
+        dataStream.rollbackTransaction();
         return false;
+    }
+
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
 
     messageData.append(messageSeq);
 
     messageContent.resize(packetSize);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
                                packetSize) != packetSize)
+    {
+        dataStream.rollbackTransaction();
         return false;
+    }
+
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
 
     messageData.append(messageContent);
 
-    if (!dataStream.commitTransaction())
-        return false;
+    dataStream.commitTransaction();
 
     return true;
 }

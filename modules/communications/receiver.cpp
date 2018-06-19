@@ -1,9 +1,11 @@
 #include <QSslKey>
 #include <QFile>
 #include <QNetworkInterface>
+#include <QStandardPaths>
+#include <QDir>
 
 #include "receiver.hpp"
-#include "modules/message/request_message.hpp"
+#include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -20,16 +22,27 @@ Receiver::Receiver(QObject *parent)
     : QTcpServer(parent)
     , serverSocket(nullptr)
     , serverState(ServerState::DISCONNECTED)
+    , messageState(MessageState::MESSAGE)
     , messenger()
     , thisID("")
     , ipAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
+    , currentFileSize(0)
+    , currentPacketNumber(0)
+    , currentPath(QStandardPaths::standardLocations(
+                      QStandardPaths::DocumentsLocation)[0] +
+                      QDir::separator())
+    , currentFile()
 {
     connect(this, &Receiver::receivedInfo,
             this, &Receiver::handleInfo);
     connect(this, &Receiver::receivedAcknowledge,
             this, &Receiver::handleAcknowledge);
+    connect(this, &Receiver::receivedPacket,
+            this, &Receiver::handlePacket);
+    connect(this, &Receiver::fileCompleted,
+            this, &Receiver::saveFile);
 
     connect(&encryptingTimer, &QTimer::timeout,
             this, &Receiver::encryptingTimeout);
@@ -43,6 +56,9 @@ Receiver::~Receiver()
 
     if (serverSocket && serverSocket->isOpen())
         serverSocket->abort();
+
+    if (currentFile.isOpen())
+        currentFile.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -150,6 +166,7 @@ bool Receiver::startServer()
         return false;
 
     serverState = ServerState::CONNECTING;
+    messageState = MessageState::MESSAGE;
     return true;
 }
 
@@ -171,6 +188,9 @@ void Receiver::stopServer()
 
     if (this->isListening())
         this->close();
+
+    if (currentFile.isOpen())
+        currentFile.close();
 
     if (encryptingTimer.isActive())
         encryptingTimer.stop();
@@ -226,6 +246,35 @@ Receiver::ServerState Receiver::state() const
 
 void Receiver::handleReadyRead()
 {
+    if (messageState == MessageState::FILE)
+    {
+        int64_t remainingBytes = currentFileSize -
+                                  FileSize::PACKET_BYTES * currentPacketNumber;
+        uint32_t expectedPacketSize = (remainingBytes >= FileSize::PACKET_BYTES) ?
+                                       FileSize::PACKET_BYTES : remainingBytes;
+
+        if (!messenger.readFile(expectedPacketSize))
+            return;
+
+        qDebug() << "2";
+        emit receivedPacket(messenger.retrieveFile());
+
+        if (remainingBytes - FileSize::PACKET_BYTES <= 0)
+        {
+            qDebug() << "4";
+            emit fileCompleted();
+            return;
+        }
+
+        qDebug() << "3";
+        RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                     QByteArray::number(
+                                         ++currentPacketNumber));
+        messenger.sendMessage(requestPacket);
+
+        return;
+    }
+
     if (!messenger.readMessage())
         return;
 
@@ -257,6 +306,10 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
             handleDeviceKey(QString(info->info));
             break;
         }
+        case InfoMessage::InfoType::FILE_INFO:
+        {
+            handleFileInfo(info->info);
+        }
         default:
             break;
     }
@@ -284,6 +337,21 @@ void Receiver::handleDeviceKey(QString deviceKey)
     serverState = ServerState::UNRECOGNIZED;
 }
 
+void Receiver::handleFileInfo(QByteArray info)
+{
+    currentFileSize = Utilities::byteArrayToUint32(
+                        info.left(FileSize::MAX_FILE_SIZE_REP));
+    QString fileName = QString(info.mid(FileSize::MAX_FILE_SIZE_REP));
+
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                 QByteArray::number(currentPacketNumber));
+    messenger.sendMessage(requestPacket);
+
+    messageState = MessageState::FILE;
+
+    createFile(fileName);
+}
+
 void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
 {
     switch (ack->ack)
@@ -302,4 +370,37 @@ void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         default:
             break;
     }
+}
+
+void Receiver::handlePacket(std::shared_ptr<FileMessage> packet)
+{
+    currentFile.write(packet->fileData);
+}
+
+//-----------------------------------------------------------------------------
+// File Methods
+//-----------------------------------------------------------------------------
+
+void Receiver::setFilePath(QString path)
+{
+    currentPath = path + QDir::separator();
+}
+
+bool Receiver::createFile(QString name)
+{
+    currentFile.setFileName(currentPath + name);
+
+    if (currentFile.exists())
+        return false;
+
+    if (!currentFile.open(QIODevice::WriteOnly))
+        return false;
+
+    return true;
+}
+
+void Receiver::saveFile()
+{
+    if (currentFile.isOpen())
+        currentFile.close();
 }

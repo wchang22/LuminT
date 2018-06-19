@@ -5,8 +5,16 @@ RequestMessage::RequestMessage(Request request)
 {
 }
 
+RequestMessage::RequestMessage(RequestMessage::Request request,
+                               QByteArray requestInfo)
+    : request(request)
+    , requestInfo(requestInfo)
+{
+}
+
 RequestMessage::RequestMessage(QByteArray &requestBytes)
     : request(static_cast<Request>(requestBytes.at(0)))
+    , requestInfo(requestBytes.mid(1))
 {
 }
 
@@ -24,6 +32,7 @@ QByteArray RequestMessage::serialize()
 {
     QByteArray requestBytes;
     requestBytes.append(static_cast<char>(this->request));
+    requestBytes.append(requestInfo);
 
     return requestBytes;
 }
