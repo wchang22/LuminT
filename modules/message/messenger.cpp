@@ -63,10 +63,7 @@ bool Messenger::sendMessage(Message &message)
 bool Messenger::sendMessage(FileMessage &message)
 {
     if (!frame(message))
-    {
-        qDebug() << "asdf";
         return false;
-    }
 
     const int bytesWritten = dataStream.writeRawData(
                                 reinterpret_cast<const char*>(
