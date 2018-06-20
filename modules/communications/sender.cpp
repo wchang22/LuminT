@@ -9,13 +9,6 @@
 #include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
-// Constants
-//-----------------------------------------------------------------------------
-
-const int PORT = 4002;
-const int ENCRYPTING_TIMEOUT = 5000; // ms
-
-//-----------------------------------------------------------------------------
 // Constructor/Destructor
 //-----------------------------------------------------------------------------
 
@@ -59,7 +52,7 @@ Sender::~Sender()
 //-----------------------------------------------------------------------------
 void Sender::socketConnected()
 {
-    encryptingTimer.start(ENCRYPTING_TIMEOUT);
+    encryptingTimer.start(LuminT::ENCRYPTING_TIMEOUT);
 
     clientState = ClientState::CONNECTED;
 }
@@ -129,7 +122,7 @@ void Sender::setup(RegisterDeviceList &registerDeviceList)
 
 void Sender::connectToReceiver()
 {
-    clientSocket.connectToHostEncrypted(peerIPAddress, PORT);
+    clientSocket.connectToHostEncrypted(peerIPAddress, LuminT::PORT);
     clientState = ClientState::CONNECTING;
 }
 
@@ -245,9 +238,11 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         }
         case RequestMessage::Request::FILE_PACKET:
         {
-            FileMessage filePacket(currentFilePath,
-                                   request->requestInfo.toInt());
+            int packetNumber = request->requestInfo.toInt();
+            FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
+            emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES /
+                              currentFileSize);
             break;
         }
         default:
@@ -284,14 +279,14 @@ bool Sender::sendFile(QString filePath)
     currentFilePath = filePath;
 
     QFile file(currentFilePath);
-    QString fileName = currentFilePath.split("/").last();
-    qint64 fileSize = file.size();
+    currentFileSize = file.size();
 
-    if (fileSize > FileSize::MAX_FILE_SIZE)
+    if (currentFileSize > LuminT::MAX_FILE_SIZE)
         return false;
 
+    QString fileName(currentFilePath.split("/").last());
     QByteArray info;
-    info.append(Utilities::uint32ToByteArray(fileSize));
+    info.append(Utilities::uint32ToByteArray(currentFileSize));
     info.append(fileName);
 
     InfoMessage fileInfo(InfoMessage::InfoType::FILE_INFO, info);

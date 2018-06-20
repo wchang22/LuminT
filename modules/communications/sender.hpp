@@ -90,6 +90,8 @@ signals:
     void receivedRequest(std::shared_ptr<RequestMessage> request);
     void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
+    void sendProgress(float progress);
+
 public slots:
     void connectToReceiver();
     void disconnectFromReceiver();
@@ -139,6 +141,7 @@ private:
     QTimer encryptingTimer;
 
     QString currentFilePath;
+    qint64 currentFileSize;
 };
 
 #endif // SENDER_HPP

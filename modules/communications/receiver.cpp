@@ -8,13 +8,6 @@
 #include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
-// Constants
-//-----------------------------------------------------------------------------
-
-const int PORT = 4002;
-const int ENCRYPTING_TIMEOUT = 5000; // ms
-
-//-----------------------------------------------------------------------------
 // Constructor/Destructor
 //-----------------------------------------------------------------------------
 
@@ -104,7 +97,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     serverSocket->startServerEncryption();
 
     // Start 5s timer for encryption
-    encryptingTimer.start(ENCRYPTING_TIMEOUT);
+    encryptingTimer.start(LuminT::ENCRYPTING_TIMEOUT);
 
     serverState = ServerState::ENCRYPTING;
 }
@@ -162,7 +155,7 @@ bool Receiver::startServer()
     if (serverState == ServerState::CONNECTING)
         return false;
 
-    if (!this->listen(QHostAddress(ipAddress), PORT))
+    if (!this->listen(QHostAddress(ipAddress), LuminT::PORT))
         return false;
 
     serverState = ServerState::CONNECTING;
@@ -249,27 +242,27 @@ void Receiver::handleReadyRead()
     if (messageState == MessageState::FILE)
     {
         int64_t remainingBytes = currentFileSize -
-                                  FileSize::PACKET_BYTES * currentPacketNumber;
-        uint32_t expectedPacketSize = (remainingBytes >= FileSize::PACKET_BYTES) ?
-                                       FileSize::PACKET_BYTES : remainingBytes;
+                                  LuminT::PACKET_BYTES * currentPacketNumber;
+        uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES)
+                                       ? LuminT::PACKET_BYTES : remainingBytes;
 
         if (!messenger.readFile(expectedPacketSize))
             return;
 
-        qDebug() << "2";
         emit receivedPacket(messenger.retrieveFile());
+        emit receiveProgress((double) LuminT::PACKET_BYTES *
+                             ++currentPacketNumber /
+                             currentFileSize);
 
-        if (remainingBytes - FileSize::PACKET_BYTES <= 0)
+        if (remainingBytes - LuminT::PACKET_BYTES <= 0)
         {
-            qDebug() << "4";
             emit fileCompleted();
+            messageState = MessageState::MESSAGE;
             return;
         }
 
-        qDebug() << "3";
         RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                     QByteArray::number(
-                                         ++currentPacketNumber));
+                                     QByteArray::number(currentPacketNumber));
         messenger.sendMessage(requestPacket);
 
         return;
@@ -337,11 +330,12 @@ void Receiver::handleDeviceKey(QString deviceKey)
     serverState = ServerState::UNRECOGNIZED;
 }
 
-void Receiver::handleFileInfo(QByteArray info)
+void Receiver::handleFileInfo(QByteArray &info)
 {
     currentFileSize = Utilities::byteArrayToUint32(
-                        info.left(FileSize::MAX_FILE_SIZE_REP));
-    QString fileName = QString(info.mid(FileSize::MAX_FILE_SIZE_REP));
+                        info.left(LuminT::MAX_FILE_SIZE_REP));
+    QString fileName(info.mid(LuminT::MAX_FILE_SIZE_REP));
+    currentPacketNumber = 0;
 
     RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
                                  QByteArray::number(currentPacketNumber));

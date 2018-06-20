@@ -21,6 +21,11 @@ ScrollView {
             }
         }
 
+        Connections {
+            target: sender
+            onSendProgress: sendFileProgressBar.value = progress
+        }
+
         ColumnLayout {
             id: senderColumnLayout
             anchors.fill: parent

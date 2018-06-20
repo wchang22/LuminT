@@ -1,9 +1,10 @@
 #include <QUuid>
 
 #include "register_device_list.hpp"
+#include "modules/utilities/utilities.hpp"
 
 RegisterDeviceList::RegisterDeviceList()
-    : configFile(CONFIG_FILE_NAME)
+    : configFile(LuminT::CONFIG_FILE_NAME)
     , thisKey("")
 {
     // Add field for adding new devices
@@ -50,8 +51,8 @@ void RegisterDeviceList::generateConf()
 
     configFile.write((QUuid::createUuid()
                       .toString().toStdString()
-                      .substr(1, 1+DEVICE_KEY_SIZE))
-                      .c_str(), DEVICE_KEY_SIZE);
+                      .substr(1, 1+LuminT::DEVICE_KEY_SIZE))
+                      .c_str(), LuminT::DEVICE_KEY_SIZE);
 
     configFile.close();
 }
@@ -61,14 +62,14 @@ void RegisterDeviceList::readDeviceItems()
     configFile.open(QIODevice::ReadOnly);
 
     // first key is our key
-    thisKey = QString(configFile.readLine(DEVICE_KEY_SIZE+1));
+    thisKey = QString(configFile.readLine(LuminT::DEVICE_KEY_SIZE+1));
 
     int seq = 1;
 
     while (!configFile.atEnd())
     {
         // Read all keyss and append to deviceItems vector
-        QString line(configFile.readLine(DEVICE_KEY_SIZE+1));
+        QString line(configFile.readLine(LuminT::DEVICE_KEY_SIZE+1));
         deviceItems.append({ line, true, seq++, QStringLiteral("\u2013") });
     }
 

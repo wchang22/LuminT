@@ -1,4 +1,5 @@
 #include "test_data_transfer.hpp"
+#include "modules/utilities/utilities.hpp"
 
 QTEST_MAIN(TestDataTransfer)
 
@@ -17,7 +18,7 @@ void TestDataTransfer::initTestCase()
     // Setup devices, IP address, Keys
     senderRegisterDeviceList.generateConf();
     senderRegisterDeviceList.readDeviceItems();
-    QVERIFY(QFile::remove(CONFIG_FILE_NAME));
+    QVERIFY(QFile::remove(LuminT::CONFIG_FILE_NAME));
     receiverRegisterDeviceList.generateConf();
     receiverRegisterDeviceList.readDeviceItems();
 

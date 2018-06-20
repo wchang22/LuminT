@@ -20,7 +20,8 @@ SOURCES += \
         ../../modules/message/request_message.cpp \
         ../../modules/message/info_message.cpp \
         ../../modules/message/acknowledge_message.cpp \
-        ../../modules/message/text_message.cpp
+        ../../modules/message/text_message.cpp \
+        ../../modules/message/file_message.cpp \
 
 HEADERS += \
         test_message.hpp \
@@ -29,4 +30,5 @@ HEADERS += \
         ../../modules/message/request_message.hpp \
         ../../modules/message/info_message.hpp \
         ../../modules/message/acknowledge_message.hpp \
-        ../../modules/message/text_message.hpp
+        ../../modules/message/text_message.hpp \
+        ../../modules/message/file_message.hpp \

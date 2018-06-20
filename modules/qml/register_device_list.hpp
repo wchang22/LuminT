@@ -5,9 +5,6 @@
 #include <QVector>
 #include <QFile>
 
-const QString CONFIG_FILE_NAME = "lumint.conf";
-const int DEVICE_KEY_SIZE = 8;
-
 struct RegisterDeviceItem
 {
     QString deviceKey;

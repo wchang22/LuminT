@@ -2,6 +2,7 @@
 #include <QLoggingCategory>
 
 #include "test_communications.hpp"
+#include "modules/utilities/utilities.hpp"
 
 const int WAIT_DURATION = 5000; // ms
 const int PORT = 4002;
@@ -32,7 +33,7 @@ void TestCommunications::initTestCase()
 
     senderRegisterDeviceList.generateConf();
     senderRegisterDeviceList.readDeviceItems();
-    QVERIFY(QFile::remove(CONFIG_FILE_NAME));
+    QVERIFY(QFile::remove(LuminT::CONFIG_FILE_NAME));
     receiverRegisterDeviceList.generateConf();
     receiverRegisterDeviceList.readDeviceItems();
     sender.setup(senderRegisterDeviceList);

@@ -8,8 +8,9 @@ Utilities::Utilities(QClipboard *clipboard)
 QByteArray Utilities::uint32ToByteArray(uint32_t integer)
 {
     QByteArray byteArray;
-    for (int i = 0; i < 4; i++)
-        byteArray.prepend(static_cast<char>((integer >> i * 8) & 0xFF));
+    for (int i = 0; i < LuminT::UINT32_BYTE_REP; i++)
+        byteArray.prepend(static_cast<char>(
+                         ((integer >> (i * LuminT::BYTE))) & 0xFF));
 
     return byteArray;
 }
@@ -17,8 +18,11 @@ QByteArray Utilities::uint32ToByteArray(uint32_t integer)
 uint32_t Utilities::byteArrayToUint32(QByteArray byteArray)
 {
     uint32_t integer = 0;
-    for (int i = 0; i < 4; i++)
-        integer += byteArray.at(i) << ((3 - i) * 8);
+    for (int i = 0; i < LuminT::UINT32_BYTE_REP; i++)
+    {
+        integer += static_cast<uint8_t>(byteArray.at(i)) <<
+                   ((LuminT::UINT32_BYTE_REP - i - 1) * LuminT::BYTE);
+    }
 
     return integer;
 }

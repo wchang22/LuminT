@@ -110,6 +110,7 @@ signals:
     void receivedText(QString text);
     void receivedPacket(std::shared_ptr<FileMessage> packet);
 
+    void receiveProgress(float progress);
     void fileCompleted();
 
 public slots:
@@ -153,7 +154,7 @@ private:
      */
     void handleDeviceKey(QString deviceKey);
 
-    void handleFileInfo(QByteArray info);
+    void handleFileInfo(QByteArray &info);
 
     QSslSocket *serverSocket;
     ServerState serverState;

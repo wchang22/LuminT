@@ -21,9 +21,11 @@ SOURCES += \
         ../../modules/message/info_message.cpp \
         ../../modules/message/acknowledge_message.cpp \
         ../../modules/message/text_message.cpp \
+        ../../modules/message/file_message.cpp \
         ../../modules/communications/receiver.cpp \
         ../../modules/communications/sender.cpp \
-        ../../modules/qml/register_device_list.cpp
+        ../../modules/qml/register_device_list.cpp \
+        ../../modules/utilities/utilities.cpp \
 
 HEADERS += \
         test_communications.hpp \
@@ -33,9 +35,11 @@ HEADERS += \
         ../../modules/message/info_message.hpp \
         ../../modules/message/acknowledge_message.hpp \
         ../../modules/message/text_message.hpp \
+        ../../modules/message/file_message.hpp \
         ../../modules/communications/receiver.hpp \
         ../../modules/communications/sender.hpp \
-        ../../modules/qml/register_device_list.hpp
+        ../../modules/qml/register_device_list.hpp \
+        ../../modules/utilities/utilities.hpp \
 
 RESOURCES += \
         ../../qml.qrc

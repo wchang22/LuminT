@@ -29,6 +29,7 @@ ScrollView {
         Connections {
             target: receiver
             onReceivedText: receiveTextArea.text = text
+            onReceiveProgress: receiveFileProgressBar.value = progress
         }
 
         ColumnLayout {
