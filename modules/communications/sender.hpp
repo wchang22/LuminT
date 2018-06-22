@@ -58,7 +58,7 @@ public:
     explicit Sender(QObject *parent = nullptr);
     ~Sender();
 
-    enum class ClientState : uint8_t
+    enum class ClientState
     {
         ERROR,
         DISCONNECTED,

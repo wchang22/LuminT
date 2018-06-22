@@ -294,5 +294,7 @@ bool Sender::sendFile(QString filePath)
     if (!messenger.sendMessage(fileInfo))
         return false;
 
+    emit sendProgress(0);
+
     return true;
 }

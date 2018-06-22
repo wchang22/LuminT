@@ -19,10 +19,8 @@ uint32_t Utilities::byteArrayToUint32(QByteArray byteArray)
 {
     uint32_t integer = 0;
     for (int i = 0; i < LuminT::UINT32_BYTE_REP; i++)
-    {
         integer += static_cast<uint8_t>(byteArray.at(i)) <<
                    ((LuminT::UINT32_BYTE_REP - i - 1) * LuminT::BYTE);
-    }
 
     return integer;
 }

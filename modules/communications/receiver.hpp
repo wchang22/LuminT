@@ -61,7 +61,7 @@ public:
     Receiver(QObject *parent = nullptr);
     ~Receiver();
 
-    enum class ServerState : uint8_t
+    enum class ServerState
     {
         ERROR,
         DISCONNECTED,
@@ -73,7 +73,15 @@ public:
     };
     Q_ENUM(ServerState) // Q_ENUM macro exposes this enum to qml
 
-    enum class MessageState : uint8_t
+    enum class FileState
+    {
+        OK,
+        EXISTS,
+        ERROR,
+    };
+    Q_ENUM(FileState)
+
+    enum class MessageState
     {
         MESSAGE,
         FILE,
@@ -110,6 +118,7 @@ signals:
     void receivedText(QString text);
     void receivedPacket(std::shared_ptr<FileMessage> packet);
 
+    void fileStatus(FileState status, QString fileName);
     void receiveProgress(float progress);
     void fileCompleted();
 
@@ -124,6 +133,8 @@ public slots:
     QString getThisID() const;
 
     void setFilePath(QString path);
+    void createFile(QString name);
+    void requestFirstPacket();
 
 private slots:
     void socketReady(); // Socket has been encrypted
@@ -139,7 +150,6 @@ private slots:
     void handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
     void handlePacket(std::shared_ptr<FileMessage> packet);
 
-    bool createFile(QString name);
     void saveFile();
 
 private:

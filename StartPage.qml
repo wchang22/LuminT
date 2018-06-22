@@ -2,10 +2,11 @@ import QtQuick 2.10
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 
+import communications 1.0
+
 Page {
     id: startPage
     objectName: "startPage"
-    transformOrigin: Item.Center
     title: qsTr("LuminT")
 
     ColumnLayout {

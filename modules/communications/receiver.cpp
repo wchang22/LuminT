@@ -335,13 +335,9 @@ void Receiver::handleFileInfo(QByteArray &info)
     currentFileSize = Utilities::byteArrayToUint32(
                         info.left(LuminT::MAX_FILE_SIZE_REP));
     QString fileName(info.mid(LuminT::MAX_FILE_SIZE_REP));
-    currentPacketNumber = 0;
+    currentPacketNumber = 0; 
 
-    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(currentPacketNumber));
-    messenger.sendMessage(requestPacket);
-
-    messageState = MessageState::FILE;
+    emit receiveProgress(0);
 
     createFile(fileName);
 }
@@ -371,6 +367,15 @@ void Receiver::handlePacket(std::shared_ptr<FileMessage> packet)
     currentFile.write(packet->fileData);
 }
 
+void Receiver::requestFirstPacket()
+{
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                 QByteArray::number(currentPacketNumber));
+    messenger.sendMessage(requestPacket);
+
+    messageState = MessageState::FILE;
+}
+
 //-----------------------------------------------------------------------------
 // File Methods
 //-----------------------------------------------------------------------------
@@ -380,17 +385,29 @@ void Receiver::setFilePath(QString path)
     currentPath = path + QDir::separator();
 }
 
-bool Receiver::createFile(QString name)
+void Receiver::createFile(QString name)
 {
+    if (name.length() == 0)
+    {
+        emit fileStatus(FileState::ERROR, name);
+        return;
+    }
+
     currentFile.setFileName(currentPath + name);
 
     if (currentFile.exists())
-        return false;
+    {
+        emit fileStatus(FileState::EXISTS, name);
+        return;
+    }
 
     if (!currentFile.open(QIODevice::WriteOnly))
-        return false;
+    {
+        emit fileStatus(FileState::ERROR, name);
+        return;
+    }
 
-    return true;
+    emit fileStatus(FileState::OK, name);
 }
 
 void Receiver::saveFile()

@@ -1,7 +1,6 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
 
 import communications 1.0
 
@@ -10,19 +9,38 @@ ApplicationWindow {
     width: 480
     height: 480
     title: qsTr("LuminT") 
+    onClosing: close.accepted = true
+
     Component.onCompleted: {
-        if (receiver.state() === Receiver.ERROR)
-            errorDialog.open()
+        if (receiver.state() === Receiver.ServerState.ERROR)
+            errorPopup.open()
     }
 
-    MessageDialog {
-        id: errorDialog
-        title: qsTr("Error")
-        text: qsTr("Please make sure you are connected "+
-                   "to internet before starting LuminT. Closing...")
-        icon: StandardIcon.Critical
-        onAccepted: Qt.quit()
-        onVisibleChanged: if (!this.visible) Qt.quit()
+    Popup {
+        id: errorPopup
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 300
+        height: 150
+        modal: true
+        closePolicy: Popup.NoAutoClose
+        ColumnLayout {
+            anchors.fill: parent
+            Label {
+                text: qsTr("Please make sure you are connected\n"+
+                           "to internet before starting LuminT.\nClosing...")
+                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+            }
+            Button {
+                text: qsTr("Ok")
+                Layout.preferredWidth: 75
+                Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+                onClicked: {
+                    errorPopup.close()
+                    Qt.quit()
+                }
+            }
+        }
     }
 
     Connections {

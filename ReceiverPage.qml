@@ -2,14 +2,36 @@ import QtQuick 2.10
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 import Qt.labs.platform 1.0
+import QtQuick.Dialogs 1.2
 
 import utilities 1.0
+import communications 1.0
 
 ScrollView {
     Page {
         id: receiverPage
         padding: 30
         objectName: "receiverPage"
+
+        Connections {
+            target: receiver
+            onReceivedText: receiveTextArea.text = text
+            onReceiveProgress: receiveFileProgressBar.value = progress
+            onFileStatus: {
+                switch(status)
+                {
+                    case Receiver.FileState.EXISTS:
+                        fileExistsField.text = fileName
+                        fileExistsPopup.open()
+                        break
+                    case Receiver.FileState.ERROR:
+                        fileErrorPopup.open()
+                        break
+                    case Receiver.FileState.OK:
+                        receiver.requestFirstPacket()
+                }
+            }
+        }
 
         FolderDialog {
             id: receiverFolderDialog
@@ -26,10 +48,70 @@ ScrollView {
             }
         }
 
-        Connections {
-            target: receiver
-            onReceivedText: receiveTextArea.text = text
-            onReceiveProgress: receiveFileProgressBar.value = progress
+        Popup {
+            id: fileExistsPopup
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: 300
+            height: 200
+            modal: true
+            closePolicy: Popup.NoAutoClose
+            ColumnLayout {
+                anchors.fill: parent
+                Label {
+                    text: qsTr("File already exists. Enter a new name: ")
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                }
+                TextField {
+                    id: fileExistsField
+                    Layout.fillWidth: true
+                    selectByMouse: true
+                }
+                Row {
+                    Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+                    spacing: 10
+                    Button {
+                        text: qsTr("Create")
+                        width: 75
+                        onClicked: {
+                            fileExistsPopup.close()
+                            receiver.createFile(fileExistsField.text)
+                        }
+                    }
+                    Button {
+                        text: qsTr("Cancel")
+                        width: 75
+                        onClicked: {
+                            fileExistsPopup.close()
+                        }
+                    }
+                }
+            }
+        }
+
+        Popup {
+            id: fileErrorPopup
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: 300
+            height: 100
+            modal: true
+            closePolicy: Popup.NoAutoClose
+            ColumnLayout {
+                anchors.fill: parent
+                Label {
+                    text: qsTr("There was an error creating the file.")
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                }
+                Button {
+                    text: qsTr("Ok")
+                    Layout.preferredWidth: 75
+                    Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+                    onClicked: {
+                        fileErrorPopup.close()
+                    }
+                }
+            }
         }
 
         ColumnLayout {
