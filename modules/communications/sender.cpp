@@ -21,6 +21,7 @@ Sender::Sender(QObject *parent)
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
     , currentFilePath("")
+    , sending(false)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -124,6 +125,7 @@ void Sender::connectToReceiver()
 {
     clientSocket.connectToHostEncrypted(peerIPAddress, LuminT::PORT);
     clientState = ClientState::CONNECTING;
+    sending = false;
 }
 
 void Sender::disconnectFromReceiver()
@@ -131,6 +133,7 @@ void Sender::disconnectFromReceiver()
     if (clientState == ClientState::DISCONNECTED)
         return;
 
+    sending = false;
     clientSocket.abort();
     clientState = ClientState::DISCONNECTED;
 }
@@ -238,6 +241,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         }
         case RequestMessage::Request::FILE_PACKET:
         {
+            sending = true;
             int packetNumber = request->requestInfo.toInt();
             FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
@@ -260,6 +264,11 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
             clientSocket.disconnectFromHost();
             break;
         }
+        case AcknowledgeMessage::Acknowledge::FILE_SUCCESS:
+        {
+            sending = false;
+            break;
+        }
         default:
             break;
     }
@@ -276,6 +285,9 @@ bool Sender::sendTextMessage(QString text)
 
 bool Sender::sendFile(QString filePath)
 {
+    if (sending)
+        return false;
+
     currentFilePath = filePath;
 
     QFile file(currentFilePath);

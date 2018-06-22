@@ -12,7 +12,7 @@ namespace LuminT
     const int UINT32_BYTE_REP = 4; // uint32_t is represented with 4 bytes
 
     const int BYTE = 8; // one byte is 8 bits
-    const int MEGABYTE = pow(1024, 2);
+    const int KILOBYTE = 1024;
     // Message constants
     const int MESSAGE_ID_BYTES = 1;
     const int MESSAGE_SIZE_BYTES = 2;
@@ -21,7 +21,7 @@ namespace LuminT
 
     // File Message constants
     const int SEQ_BYTES = 2;
-    const int PACKET_BYTES = 400 * 1024;
+    const int PACKET_BYTES = 300 * KILOBYTE;
     const uint32_t MAX_FILE_SIZE = UINT32_MAX;
     const int MAX_FILE_SIZE_REP = UINT32_BYTE_REP;
 

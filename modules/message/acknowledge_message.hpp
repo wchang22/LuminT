@@ -15,6 +15,7 @@ public:
     {
         ERROR,          // General error, often device key is invalid
         DEVICE_KEY_OK,  // Device key is accepted
+        FILE_SUCCESS,
         ENUM_END,       // Marks end of num, used for testing
     };
 

@@ -142,6 +142,8 @@ private:
 
     QString currentFilePath;
     qint64 currentFileSize;
+
+    bool sending;
 };
 
 #endif // SENDER_HPP

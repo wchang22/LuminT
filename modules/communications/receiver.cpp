@@ -257,6 +257,11 @@ void Receiver::handleReadyRead()
         if (remainingBytes - LuminT::PACKET_BYTES <= 0)
         {
             emit fileCompleted();
+
+            AcknowledgeMessage fileSuccess(
+                        AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
+            messenger.sendMessage(fileSuccess);
+
             messageState = MessageState::MESSAGE;
             return;
         }
@@ -373,7 +378,7 @@ void Receiver::requestFirstPacket()
                                  QByteArray::number(currentPacketNumber));
     messenger.sendMessage(requestPacket);
 
-    messageState = MessageState::FILE;
+    messageState = MessageState::FILE; 
 }
 
 //-----------------------------------------------------------------------------
