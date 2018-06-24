@@ -212,7 +212,7 @@ ScrollView {
                         selectByMouse: true
                         Component.onCompleted: {
                             var documents = StandardPaths.standardLocations(
-                                                StandardPaths.DocumentsLocation)[0]
+                                            StandardPaths.DocumentsLocation)[0]
                             documents = documents.replace(/^(file:\/{3})/,"")
                             documents = decodeURIComponent(documents)
                             receiveFileNameField.text = documents

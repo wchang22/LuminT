@@ -12,7 +12,8 @@ Page {
 
         Label {
             id: connectionUnrecognizedLabel
-            text: qsTr("Device keys do not match.\nMake sure both are registered.")
+            text: qsTr("Device keys do not match.\n"+
+                       "Make sure both are registered.")
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             font.bold: true

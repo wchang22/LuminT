@@ -42,7 +42,8 @@ QVariant RegisterDeviceModel::data(const QModelIndex &index, int role) const
     }
 }
 
-bool RegisterDeviceModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool RegisterDeviceModel::setData(const QModelIndex &index,
+                                  const QVariant &value, int role)
 {
     if (!deviceList)
         return false;
@@ -101,21 +102,33 @@ void RegisterDeviceModel::setDeviceList(RegisterDeviceList *value)
 
     if (deviceList)
     {
-        connect(deviceList, &RegisterDeviceList::preItemInserted, this, [=](int index) {
-            beginInsertRows(QModelIndex(), index, index);
-        });
+        connect(deviceList, &RegisterDeviceList::preItemInserted,
+                this, [=](int index)
+                {
+                    beginInsertRows(QModelIndex(), index, index);
+                }
+        );
 
-        connect(deviceList, &RegisterDeviceList::postItemInserted, this, [=]() {
-            endInsertRows();
-        });
+        connect(deviceList, &RegisterDeviceList::postItemInserted,
+                this, [=]()
+                {
+                    endInsertRows();
+                }
+        );
 
-        connect(deviceList, &RegisterDeviceList::preItemRemoved, this, [=](int index) {
-            beginRemoveRows(QModelIndex(), index, index);
-        });
+        connect(deviceList, &RegisterDeviceList::preItemRemoved,
+                this, [=](int index)
+                {
+                    beginRemoveRows(QModelIndex(), index, index);
+                }
+        );
 
-        connect(deviceList, &RegisterDeviceList::postItemRemoved, this, [=]() {
-            endRemoveRows();
-        });
+        connect(deviceList, &RegisterDeviceList::postItemRemoved,
+                this, [=]()
+                {
+                    endRemoveRows();
+                }
+        );
     }
 
     endResetModel();

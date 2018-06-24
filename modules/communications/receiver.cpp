@@ -24,8 +24,7 @@ Receiver::Receiver(QObject *parent)
     , currentFileSize(0)
     , currentPacketNumber(0)
     , currentPath(QStandardPaths::standardLocations(
-                      QStandardPaths::DocumentsLocation)[0] +
-                      QDir::separator())
+                  QStandardPaths::DocumentsLocation)[0] + QDir::separator())
     , currentFile()
 {
     connect(this, &Receiver::receivedInfo,
@@ -105,7 +104,6 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 void Receiver::socketReady()
 {
     // Devices are now encrypted, start key verification process
-
     encryptingTimer.stop();
 
     messenger.setDevice(serverSocket);
@@ -251,7 +249,8 @@ void Receiver::handleReadyRead()
                                   messenger.retrieveMessage()));
                 break;
             case Message::MessageID::ACKNOWLEDGE:
-                emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
+                emit receivedAcknowledge(std::static_pointer_cast<
+                                         AcknowledgeMessage>(
                                          messenger.retrieveMessage()));
                 break;
             case Message::MessageID::TEXT:
@@ -264,17 +263,18 @@ void Receiver::handleReadyRead()
         return;
     }
 
-    int64_t remainingBytes = currentFileSize -
-                              LuminT::PACKET_BYTES * currentPacketNumber;
-    uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES)
-                                   ? LuminT::PACKET_BYTES : remainingBytes;
+    int64_t remainingBytes = currentFileSize - LuminT::PACKET_BYTES *
+                             currentPacketNumber;
+    uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES) ?
+                                   LuminT::PACKET_BYTES : remainingBytes;
 
     if (!messenger.readFile(expectedPacketSize))
         return;
 
     if (messageState == MessageState::FILE_ABORTING)
     {
-        RequestMessage cancelRequest(RequestMessage::Request::CANCEL_FILE_TRANSFER);
+        RequestMessage cancelRequest(
+            RequestMessage::Request::CANCEL_FILE_TRANSFER);
         messenger.sendMessage(cancelRequest);
 
         messageState = MessageState::MESSAGE;
@@ -283,8 +283,7 @@ void Receiver::handleReadyRead()
 
     emit receivedPacket(messenger.retrieveFile());
     emit receiveProgress((double) LuminT::PACKET_BYTES *
-                         ++currentPacketNumber /
-                         currentFileSize);
+                         ++currentPacketNumber / currentFileSize);
 
     if (remainingBytes - LuminT::PACKET_BYTES <= 0)
     {
@@ -340,13 +339,14 @@ void Receiver::handleDeviceKey(QString deviceKey)
     // If device key is not registered, send error
     AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::ERROR);
     messenger.sendMessage(ack);
+
     serverState = ServerState::UNRECOGNIZED;
 }
 
 void Receiver::handleFileInfo(QByteArray &info)
 {
     currentFileSize = Utilities::byteArrayToUint32(
-                        info.left(LuminT::MAX_FILE_SIZE_REP));
+                      info.left(LuminT::MAX_FILE_SIZE_REP));
     QString fileName(info.mid(LuminT::MAX_FILE_SIZE_REP));
     currentPacketNumber = 0; 
 

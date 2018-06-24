@@ -35,7 +35,8 @@ Sender::Sender(QObject *parent)
             this, &Sender::handleReadyRead);
     connect(this, &Sender::receivedInfo, this, &Sender::handleInfo);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
-    connect(this, &Sender::receivedAcknowledge, this, &Sender::handleAcknowledge);
+    connect(this, &Sender::receivedAcknowledge,
+            this, &Sender::handleAcknowledge);
 
     connect(&encryptingTimer, &QTimer::timeout,
             this, &Sender::encryptingTimeout);
@@ -124,6 +125,7 @@ void Sender::setup(RegisterDeviceList &registerDeviceList)
 void Sender::connectToReceiver()
 {
     clientSocket.connectToHostEncrypted(peerIPAddress, LuminT::PORT);
+
     clientState = ClientState::CONNECTING;
     messageState = MessageState::MESSAGE;
 }
@@ -183,7 +185,8 @@ void Sender::handleReadyRead()
                                  messenger.retrieveMessage()));
             break;
         case Message::MessageID::ACKNOWLEDGE:
-            emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
+            emit receivedAcknowledge(std::static_pointer_cast<
+                                     AcknowledgeMessage>(
                                      messenger.retrieveMessage()));
             break;
         default:
@@ -246,6 +249,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
             int packetNumber = request->requestInfo.toInt();
             FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
+
             emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES /
                               currentFileSize);
             break;
@@ -253,6 +257,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         case RequestMessage::Request::CANCEL_FILE_TRANSFER:
         {
             messageState = MessageState::MESSAGE;
+
             emit fileCompleted();
             emit sendProgress(0);
             break;
