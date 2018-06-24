@@ -84,7 +84,9 @@ public:
     enum class MessageState
     {
         MESSAGE,
-        FILE,
+        FILE_SENDING,
+        FILE_PAUSED,
+        FILE_ABORTING,
     };
 
     /*!
@@ -135,6 +137,9 @@ public slots:
     void setFilePath(QString path);
     void createFile(QString name);
     void requestFirstPacket();
+    void pauseFileTransfer();
+    void cancelFileTransfer();
+    void sendFileError();
 
 private slots:
     void socketReady(); // Socket has been encrypted

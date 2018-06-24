@@ -239,60 +239,68 @@ Receiver::ServerState Receiver::state() const
 
 void Receiver::handleReadyRead()
 {
-    if (messageState == MessageState::FILE)
+    if (messageState == MessageState::MESSAGE)
     {
-        int64_t remainingBytes = currentFileSize -
-                                  LuminT::PACKET_BYTES * currentPacketNumber;
-        uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES)
-                                       ? LuminT::PACKET_BYTES : remainingBytes;
-
-        if (!messenger.readFile(expectedPacketSize))
+        if (!messenger.readMessage())
             return;
 
-        emit receivedPacket(messenger.retrieveFile());
-        emit receiveProgress((double) LuminT::PACKET_BYTES *
-                             ++currentPacketNumber /
-                             currentFileSize);
-
-        if (remainingBytes - LuminT::PACKET_BYTES <= 0)
+        switch (messenger.messageType())
         {
-            emit fileCompleted();
-
-            AcknowledgeMessage fileSuccess(
-                        AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
-            messenger.sendMessage(fileSuccess);
-
-            messageState = MessageState::MESSAGE;
-            return;
+            case Message::MessageID::INFO:
+                emit receivedInfo(std::static_pointer_cast<InfoMessage>(
+                                  messenger.retrieveMessage()));
+                break;
+            case Message::MessageID::ACKNOWLEDGE:
+                emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
+                                         messenger.retrieveMessage()));
+                break;
+            case Message::MessageID::TEXT:
+                emit receivedText(std::static_pointer_cast<TextMessage>(
+                                  messenger.retrieveMessage())->text);
+                break;
+            default:
+                break;
         }
-
-        RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                     QByteArray::number(currentPacketNumber));
-        messenger.sendMessage(requestPacket);
-
         return;
     }
 
-    if (!messenger.readMessage())
+    int64_t remainingBytes = currentFileSize -
+                              LuminT::PACKET_BYTES * currentPacketNumber;
+    uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES)
+                                   ? LuminT::PACKET_BYTES : remainingBytes;
+
+    if (!messenger.readFile(expectedPacketSize))
         return;
 
-    switch (messenger.messageType())
+    if (messageState == MessageState::FILE_ABORTING)
     {
-        case Message::MessageID::INFO:
-            emit receivedInfo(std::static_pointer_cast<InfoMessage>(
-                              messenger.retrieveMessage()));
-            break;
-        case Message::MessageID::ACKNOWLEDGE:
-            emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
-                                     messenger.retrieveMessage()));
-            break;
-        case Message::MessageID::TEXT:
-            emit receivedText(std::static_pointer_cast<TextMessage>(
-                              messenger.retrieveMessage())->text);
-            break;
-        default:
-            break;
+        RequestMessage cancelRequest(RequestMessage::Request::CANCEL_FILE_TRANSFER);
+        messenger.sendMessage(cancelRequest);
+
+        messageState = MessageState::MESSAGE;
+        return;
     }
+
+    emit receivedPacket(messenger.retrieveFile());
+    emit receiveProgress((double) LuminT::PACKET_BYTES *
+                         ++currentPacketNumber /
+                         currentFileSize);
+
+    if (remainingBytes - LuminT::PACKET_BYTES <= 0)
+    {
+        emit fileCompleted();
+
+        AcknowledgeMessage fileSuccess(
+                    AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
+        messenger.sendMessage(fileSuccess);
+
+        messageState = MessageState::MESSAGE;
+        return;
+    }
+
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                 QByteArray::number(currentPacketNumber));
+    messenger.sendMessage(requestPacket);
 }
 
 void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
@@ -372,15 +380,6 @@ void Receiver::handlePacket(std::shared_ptr<FileMessage> packet)
     currentFile.write(packet->fileData);
 }
 
-void Receiver::requestFirstPacket()
-{
-    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(currentPacketNumber));
-    messenger.sendMessage(requestPacket);
-
-    messageState = MessageState::FILE; 
-}
-
 //-----------------------------------------------------------------------------
 // File Methods
 //-----------------------------------------------------------------------------
@@ -420,3 +419,39 @@ void Receiver::saveFile()
     if (currentFile.isOpen())
         currentFile.close();
 }
+
+void Receiver::sendFileError()
+{
+    AcknowledgeMessage fileError(AcknowledgeMessage::Acknowledge::FILE_ERROR);
+    messenger.sendMessage(fileError);
+
+    messageState = MessageState::MESSAGE;
+}
+
+void Receiver::requestFirstPacket()
+{
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                 QByteArray::number(currentPacketNumber));
+    messenger.sendMessage(requestPacket);
+
+    messageState = MessageState::FILE_SENDING;
+}
+
+
+void Receiver::pauseFileTransfer()
+{
+
+}
+
+void Receiver::cancelFileTransfer()
+{
+    if (messageState == MessageState::MESSAGE)
+        return;
+
+    saveFile();
+    currentFile.remove();
+
+    messageState = MessageState::FILE_ABORTING;
+    emit receiveProgress(0);
+}
+

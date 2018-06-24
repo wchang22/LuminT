@@ -16,12 +16,12 @@ Sender::Sender(QObject *parent)
     : QObject(parent)
     , clientSocket()
     , clientState(ClientState::DISCONNECTED)
+    , messageState(MessageState::MESSAGE)
     , messenger()
     , peerIPAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
     , currentFilePath("")
-    , sending(false)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -125,7 +125,7 @@ void Sender::connectToReceiver()
 {
     clientSocket.connectToHostEncrypted(peerIPAddress, LuminT::PORT);
     clientState = ClientState::CONNECTING;
-    sending = false;
+    messageState = MessageState::MESSAGE;
 }
 
 void Sender::disconnectFromReceiver()
@@ -133,7 +133,6 @@ void Sender::disconnectFromReceiver()
     if (clientState == ClientState::DISCONNECTED)
         return;
 
-    sending = false;
     clientSocket.abort();
     clientState = ClientState::DISCONNECTED;
 }
@@ -241,12 +240,21 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         }
         case RequestMessage::Request::FILE_PACKET:
         {
-            sending = true;
+            if (messageState != MessageState::FILE_SENDING)
+                return;
+
             int packetNumber = request->requestInfo.toInt();
             FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
             emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES /
                               currentFileSize);
+            break;
+        }
+        case RequestMessage::Request::CANCEL_FILE_TRANSFER:
+        {
+            messageState = MessageState::MESSAGE;
+            emit fileCompleted();
+            emit sendProgress(0);
             break;
         }
         default:
@@ -264,9 +272,15 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
             clientSocket.disconnectFromHost();
             break;
         }
+        case AcknowledgeMessage::Acknowledge::FILE_ERROR:
+        {
+            messageState = MessageState::MESSAGE;
+            break;
+        }
         case AcknowledgeMessage::Acknowledge::FILE_SUCCESS:
         {
-            sending = false;
+            messageState = MessageState::MESSAGE;
+            emit fileCompleted();
             break;
         }
         default:
@@ -276,6 +290,9 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
 
 bool Sender::sendTextMessage(QString text)
 {
+    if (messageState == MessageState::FILE_SENDING)
+        return false;
+
     TextMessage textMessage(text);
     if (!messenger.sendMessage(textMessage))
         return false;
@@ -285,7 +302,7 @@ bool Sender::sendTextMessage(QString text)
 
 bool Sender::sendFile(QString filePath)
 {
-    if (sending)
+    if (messageState == MessageState::FILE_SENDING)
         return false;
 
     currentFilePath = filePath;
@@ -307,6 +324,8 @@ bool Sender::sendFile(QString filePath)
         return false;
 
     emit sendProgress(0);
+
+    messageState = MessageState::FILE_SENDING;
 
     return true;
 }

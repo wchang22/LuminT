@@ -57,6 +57,7 @@ bool Messenger::sendMessage(Message &message)
     if (bytesWritten != messageData.size())
         return false;
 
+
     return true;
 }
 
@@ -108,11 +109,26 @@ bool Messenger::readMessage()
 
     dataStream.startTransaction();
 
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
+
     messageID.resize(LuminT::MESSAGE_ID_BYTES);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()),
                                LuminT::MESSAGE_ID_BYTES) !=
                                LuminT::MESSAGE_ID_BYTES)
+    {
+        dataStream.rollbackTransaction();
         return false;
+    }
+
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
 
     messageData.append(messageID);
 
@@ -120,7 +136,16 @@ bool Messenger::readMessage()
     if (dataStream.readRawData(reinterpret_cast<char*>(messageSize.data()),
                                LuminT::MESSAGE_SIZE_BYTES) !=
                                LuminT::MESSAGE_SIZE_BYTES)
+    {
+        dataStream.rollbackTransaction();
         return false;
+    }
+
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
 
     messageData.append(messageSize);
 
@@ -134,12 +159,20 @@ bool Messenger::readMessage()
     messageContent.resize(messageContentSize);
     if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
                                messageContentSize) != messageContentSize)
+    {
+        dataStream.rollbackTransaction();
         return false;
+    }
+
+    if (dataStream.status() != QDataStream::Status::Ok)
+    {
+        dataStream.rollbackTransaction();
+        return false;
+    }
 
     messageData.append(messageContent);
 
-    if (!dataStream.commitTransaction())
-        return false;
+    dataStream.commitTransaction();
 
     return true;
 }
@@ -147,7 +180,6 @@ bool Messenger::readMessage()
 bool Messenger::readFile(uint32_t packetSize)
 {
     messageData.clear();
-    dataStream.resetStatus();
 
     QByteArray messageSeq, messageContent;
 

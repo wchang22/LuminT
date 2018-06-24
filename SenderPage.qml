@@ -24,6 +24,12 @@ ScrollView {
         Connections {
             target: sender
             onSendProgress: sendFileProgressBar.value = progress
+            onFileCompleted:
+            {
+                sendTextArea.enabled = true
+                sendTextButtonRow.enabled = true
+                sendFileRow.enabled = true
+            }
         }
 
         ColumnLayout {
@@ -143,7 +149,12 @@ ScrollView {
                         text: qsTr("Send")
                         onClicked: {
                             if (sendFileNameField.text.length != 0)
+                            {
                                 sender.sendFile(sendFileNameField.text)
+                                sendTextArea.enabled = false
+                                sendTextButtonRow.enabled = false
+                                sendFileRow.enabled = false
+                            }
                         }
                     }
                     spacing: 10

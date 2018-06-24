@@ -69,6 +69,13 @@ public:
         UNRECOGNIZED,
     };
 
+    enum class MessageState
+    {
+        MESSAGE,
+        FILE_SENDING,
+        FILE_PAUSED,
+    };
+
     /*!
      * \brief setup, sets up the CA certificate and recognized device keys
      * \details the CA certificate is used in the TLS handshake
@@ -91,6 +98,7 @@ signals:
     void receivedAcknowledge(std::shared_ptr<AcknowledgeMessage> ack);
 
     void sendProgress(float progress);
+    void fileCompleted();
 
 public slots:
     void connectToReceiver();
@@ -132,6 +140,7 @@ private:
 
     QSslSocket clientSocket;
     ClientState clientState;
+    MessageState messageState;
 
     Messenger messenger;
 
@@ -142,8 +151,6 @@ private:
 
     QString currentFilePath;
     qint64 currentFileSize;
-
-    bool sending;
 };
 
 #endif // SENDER_HPP

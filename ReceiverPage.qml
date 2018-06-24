@@ -34,15 +34,15 @@ ScrollView {
         }
 
         FolderDialog {
-            id: receiverFolderDialog
+            id: receiveFileDialog
             title: qsTr("Select a folder")
             folder: StandardPaths.standardLocations(
                         StandardPaths.DocumentsLocation)[0]
             onAccepted: {
-                var folderPath = receiverFolderDialog.folder.toString()
+                var folderPath = receiveFileDialog.folder.toString()
                 folderPath = folderPath.replace(/^(file:\/{3})/,"")
                 folderPath = decodeURIComponent(folderPath)
-                receiveFolderNameField.text = folderPath
+                receiveFileNameField.text = folderPath
 
                 receiver.setFilePath(folderPath)
             }
@@ -83,6 +83,7 @@ ScrollView {
                         width: 75
                         onClicked: {
                             fileExistsPopup.close()
+                            receiver.sendFileError()
                         }
                     }
                 }
@@ -176,13 +177,13 @@ ScrollView {
             }
 
             ColumnLayout {
-                id: receiveFolderColumnLayout
+                id: receiveFileColumnLayout
                 Layout.fillWidth: true
                 spacing: 20
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                 Label {
-                    id: receiveFolderLabel
+                    id: receiveFileLabel
                     text: qsTr("Receive File")
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     font.bold: true
@@ -190,7 +191,7 @@ ScrollView {
                 }
 
                 Row {
-                    id: receiveFolderRow
+                    id: receiveFileRow
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     Layout.fillWidth: false
                     Label {
@@ -202,7 +203,7 @@ ScrollView {
                     }
 
                     TextField {
-                        id: receiveFolderNameField
+                        id: receiveFileNameField
                         width: 232
                         anchors.verticalCenter: parent.verticalCenter
                         verticalAlignment: Text.AlignVCenter
@@ -214,15 +215,15 @@ ScrollView {
                                                 StandardPaths.DocumentsLocation)[0]
                             documents = documents.replace(/^(file:\/{3})/,"")
                             documents = decodeURIComponent(documents)
-                            receiveFolderNameField.text = documents
+                            receiveFileNameField.text = documents
                         }
                     }
 
                     Button {
-                        id: receiveFolderBrowseButton
+                        id: receiveFileBrowseButton
                         width: 75
                         text: qsTr("Browse")
-                        onClicked: receiverFolderDialog.open()
+                        onClicked: receiveFileDialog.open()
                     }
                     spacing: 10
                 }
@@ -230,6 +231,7 @@ ScrollView {
                 Row {
                     id: receiveFileProgressRow
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
+                    spacing: 25
                     Label {
                         id: receiveFileProgressLabel
                         text: qsTr("Receiving Progress:")
@@ -246,7 +248,29 @@ ScrollView {
                         Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                         value: 0
                     }
-                    spacing: 25
+                }
+
+                Row {
+                    id: receiveFileUtilitiesRow
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 10
+                    Button {
+                        id: receiveFilePauseButton
+                        width: 100
+                        text: qsTr("Pause")
+                        onClicked: {
+                            if (this.text === "Pause")
+                                this.text = "Resume"
+                            else
+                                this.text = "Pause"
+                        }
+                    }
+                    Button {
+                        id: receiveFileCancelButton
+                        width: 100
+                        text: qsTr("Cancel")
+                        onClicked: receiver.cancelFileTransfer()
+                    }
                 }
             }
 
