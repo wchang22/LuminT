@@ -24,6 +24,12 @@ ScrollView {
         Connections {
             target: sender
             onSendProgress: sendFileProgressBar.value = progress
+            onFileError:
+            {
+                sendTextArea.enabled = true
+                sendTextButtonRow.enabled = true
+                sendFileRow.enabled = true
+            }
             onFileCompleted:
             {
                 sendTextArea.enabled = true
@@ -67,20 +73,20 @@ ScrollView {
                     width: 200
                     height: 50
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                    spacing: 5
+
                     Button {
                         id: clipboardCopyButton
                         width: 100
                         text: qsTr("Copy")
                         onClicked: utilities.copy(sendTextArea.text)
                     }
-
                     Button {
                         id: clipboardPasteButton
                         width: 100
                         text: qsTr("Paste")
                         onClicked: sendTextArea.text = utilities.paste()
                     }
-
                     Button {
                         id: clearButton
                         width: 100
@@ -94,8 +100,6 @@ ScrollView {
                         text: qsTr("Send")
                         onClicked: sender.sendTextMessage(sendTextArea.text)
                     }
-
-                    spacing: 5
                 }
             }
 

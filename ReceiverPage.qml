@@ -16,7 +16,12 @@ ScrollView {
         Connections {
             target: receiver
             onReceivedText: receiveTextArea.text = text
-            onReceiveProgress: receiveFileProgressBar.value = progress
+            onReceiveProgress:
+            {
+                receiveFileProgressBar.value = progress
+                if (receiveFilePauseButton.text == "Resume")
+                    receiveFilePauseButton.text = "Pause"
+            }
             onFileStatus: {
                 switch(status)
                 {
@@ -31,6 +36,8 @@ ScrollView {
                         receiver.requestFirstPacket()
                 }
             }
+            onFilePaused: receiveFilePauseButton.text = "Resume"
+            onFileResumed: receiveFilePauseButton.text = "Pause"
         }
 
         FolderDialog {
@@ -260,9 +267,9 @@ ScrollView {
                         text: qsTr("Pause")
                         onClicked: {
                             if (this.text === "Pause")
-                                this.text = "Resume"
+                                receiver.pauseFileTransfer()
                             else
-                                this.text = "Pause"
+                                receiver.resumeFileTransfer()
                         }
                     }
                     Button {

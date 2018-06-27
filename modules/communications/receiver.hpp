@@ -124,6 +124,9 @@ signals:
     void receiveProgress(float progress);
     void fileCompleted();
 
+    void filePaused();
+    void fileResumed();
+
 public slots:
     // Allows qml to query Receiver's state to check for errors
     ServerState state() const;
@@ -139,6 +142,7 @@ public slots:
     void requestFirstPacket();
     void pauseFileTransfer();
     void cancelFileTransfer();
+    void resumeFileTransfer();
     void sendFileError();
 
 private slots:

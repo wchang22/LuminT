@@ -273,9 +273,9 @@ void Receiver::handleReadyRead()
 
     if (messageState == MessageState::FILE_ABORTING)
     {
-        RequestMessage cancelRequest(
+        RequestMessage cancelFile(
             RequestMessage::Request::CANCEL_FILE_TRANSFER);
-        messenger.sendMessage(cancelRequest);
+        messenger.sendMessage(cancelFile);
 
         messageState = MessageState::MESSAGE;
         return;
@@ -290,10 +290,21 @@ void Receiver::handleReadyRead()
         emit fileCompleted();
 
         AcknowledgeMessage fileSuccess(
-                    AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
+            AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
         messenger.sendMessage(fileSuccess);
 
         messageState = MessageState::MESSAGE;
+        return;
+    }
+
+    if (messageState == MessageState::FILE_PAUSED)
+    {
+        RequestMessage pauseFile(RequestMessage::Request::PAUSE_FILE_TRANSFER);
+        messenger.sendMessage(pauseFile);
+
+        currentFile.close();
+
+        emit filePaused();
         return;
     }
 
@@ -431,16 +442,34 @@ void Receiver::sendFileError()
 void Receiver::requestFirstPacket()
 {
     RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(currentPacketNumber));
+                                 QByteArray::number(0));
     messenger.sendMessage(requestPacket);
 
     messageState = MessageState::FILE_SENDING;
 }
 
-
 void Receiver::pauseFileTransfer()
 {
+    if (messageState != MessageState::FILE_SENDING)
+        return;
 
+    messageState = MessageState::FILE_PAUSED;
+}
+
+void Receiver::resumeFileTransfer()
+{
+    if (messageState != MessageState::FILE_PAUSED)
+        return;
+
+    currentFile.open(QIODevice::Append);
+
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
+                                 QByteArray::number(currentPacketNumber));
+    messenger.sendMessage(requestPacket);
+
+    messageState = MessageState::FILE_SENDING;
+
+    emit fileResumed();
 }
 
 void Receiver::cancelFileTransfer()
@@ -451,7 +480,16 @@ void Receiver::cancelFileTransfer()
     saveFile();
     currentFile.remove();
 
-    messageState = MessageState::FILE_ABORTING;
     emit receiveProgress(0);
-}
 
+    if (messageState != MessageState::FILE_PAUSED)
+    {
+        messageState = MessageState::FILE_ABORTING;
+        return;
+    }
+
+    RequestMessage cancelFile(RequestMessage::Request::CANCEL_FILE_TRANSFER);
+    messenger.sendMessage(cancelFile);
+
+    messageState = MessageState::MESSAGE;
+}

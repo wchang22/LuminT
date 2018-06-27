@@ -99,6 +99,7 @@ signals:
 
     void sendProgress(float progress);
     void fileCompleted();
+    void fileError();
 
 public slots:
     void connectToReceiver();

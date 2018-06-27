@@ -243,7 +243,7 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
         }
         case RequestMessage::Request::FILE_PACKET:
         {
-            if (messageState != MessageState::FILE_SENDING)
+            if (messageState == MessageState::MESSAGE)
                 return;
 
             int packetNumber = request->requestInfo.toInt();
@@ -260,6 +260,11 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
 
             emit fileCompleted();
             emit sendProgress(0);
+            break;
+        }
+        case RequestMessage::Request::PAUSE_FILE_TRANSFER:
+        {
+            messageState = MessageState::FILE_PAUSED;
             break;
         }
         default:
@@ -280,6 +285,7 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         case AcknowledgeMessage::Acknowledge::FILE_ERROR:
         {
             messageState = MessageState::MESSAGE;
+            emit fileError();
             break;
         }
         case AcknowledgeMessage::Acknowledge::FILE_SUCCESS:
@@ -315,6 +321,7 @@ bool Sender::sendFile(QString filePath)
     QFile file(currentFilePath);
     currentFileSize = file.size();
 
+    // Todo: Error if max file size exceeded
     if (currentFileSize > LuminT::MAX_FILE_SIZE)
         return false;
 

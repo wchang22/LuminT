@@ -17,7 +17,6 @@ public:
         FILE_PACKET, // Receiver requests file packet from Sender
         CANCEL_FILE_TRANSFER,
         PAUSE_FILE_TRANSFER,
-        RESUME_FILE_TRANSFER,
         ENUM_END,    // Marks end of enum, used in testing
     };
 
