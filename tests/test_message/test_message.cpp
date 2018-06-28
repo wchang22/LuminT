@@ -30,18 +30,19 @@ void TestMessage::test_info_message_data()
                                         ""};
 
     QTest::addColumn<InfoMessage::InfoType>("infoType");
-    QTest::addColumn<QByteArray>("info");
+    QTest::addColumn<QString>("deviceKey");
 
     for (int i = 0; i < deviceKeyTestData.length(); i++)
         QTest::newRow(qPrintable(QString::number(i)))
                         << InfoMessage::InfoType::DEVICE_KEY
-                        << deviceKeyTestData[i].toUtf8();
+                        << deviceKeyTestData[i];
 }
 
 void TestMessage::test_info_message()
 {
     QFETCH(InfoMessage::InfoType, infoType);
-    QFETCH(QByteArray, info);
+    QFETCH(QString, deviceKey);
+    QByteArray info = deviceKey.toUtf8();
 
     InfoMessage infoMessageFromInfo(infoType, info);
     QCOMPARE(infoMessageFromInfo.infoType, infoType);
@@ -50,7 +51,7 @@ void TestMessage::test_info_message()
     QByteArray infoBytes = infoMessageFromInfo.serialize();
     InfoMessage infoMessageFromBytes(infoBytes);
     QCOMPARE(infoMessageFromBytes.infoType, infoType);
-    QCOMPARE(infoMessageFromBytes.info, info);
+    QCOMPARE(QString(infoMessageFromBytes.info), deviceKey);
 }
 
 void TestMessage::test_request_message_data()
@@ -72,6 +73,37 @@ void TestMessage::test_request_message()
     QByteArray requestBytes = requestMessageFromRequest.serialize();
     RequestMessage requestMessageFromBytes(requestBytes);
     QCOMPARE(requestMessageFromBytes.request, request);
+}
+
+void TestMessage::test_request_message_with_info_data()
+{
+    QList<uint32_t> packetNumberTestData = {0, 1, 2, UINT16_MAX, UINT32_MAX};
+
+    QTest::addColumn<RequestMessage::Request>("request");
+    QTest::addColumn<uint32_t>("packetNumber");
+
+    for (int i = 0; i < packetNumberTestData.length(); i++)
+        QTest::newRow(qPrintable(QString::number(i)))
+                        << RequestMessage::Request::FILE_PACKET
+                        << packetNumberTestData[i];
+}
+
+void TestMessage::test_request_message_with_info()
+{
+    QFETCH(RequestMessage::Request, request);
+    QFETCH(uint32_t, packetNumber);
+    QByteArray requestInfo = QByteArray::number(packetNumber);
+
+    RequestMessage requestMessageFromRequest(request, requestInfo);
+    QCOMPARE(requestMessageFromRequest.request, request);
+    QCOMPARE(requestMessageFromRequest.requestInfo, requestInfo);
+
+    QByteArray requestBytes = requestMessageFromRequest.serialize();
+    RequestMessage requestMessageFromBytes(requestBytes);
+    QCOMPARE(requestMessageFromBytes.request, request);
+    QCOMPARE(static_cast<uint32_t>(
+                 requestMessageFromBytes.requestInfo.toULong()),
+             packetNumber);
 }
 
 void TestMessage::test_text_message_data()
@@ -148,35 +180,43 @@ void TestMessage::test_frame_retrieve_message()
         case Message::MessageID::INFO:
         {
             std::shared_ptr<InfoMessage> infoMessageActual =
-                std::static_pointer_cast<InfoMessage>(messenger.retrieveMessage());
+                std::static_pointer_cast<InfoMessage>(
+                        messenger.retrieveMessage());
             std::shared_ptr<InfoMessage> infoMessageExpected =
                 std::static_pointer_cast<InfoMessage>(message);
-            QCOMPARE(infoMessageActual->infoType, infoMessageExpected->infoType);
-            QCOMPARE(infoMessageActual->info, infoMessageExpected->info);
+            QCOMPARE(infoMessageActual->infoType,
+                     infoMessageExpected->infoType);
+            QCOMPARE(infoMessageActual->info,
+                     infoMessageExpected->info);
             break;
         }
         case Message::MessageID::REQUEST:
         {
             std::shared_ptr<RequestMessage> requestMessageActual =
-                std::static_pointer_cast<RequestMessage>(messenger.retrieveMessage());
+                std::static_pointer_cast<RequestMessage>(
+                        messenger.retrieveMessage());
             std::shared_ptr<RequestMessage> requestMessageExpected =
                 std::static_pointer_cast<RequestMessage>(message);
-            QCOMPARE(requestMessageActual->request, requestMessageExpected->request);
+            QCOMPARE(requestMessageActual->request,
+                     requestMessageExpected->request);
             break;
         }
         case Message::MessageID::ACKNOWLEDGE:
         {
             std::shared_ptr<AcknowledgeMessage> acknowledgeMessageActual =
-                std::static_pointer_cast<AcknowledgeMessage>(messenger.retrieveMessage());
+                std::static_pointer_cast<AcknowledgeMessage>(
+                        messenger.retrieveMessage());
             std::shared_ptr<AcknowledgeMessage> acknowledgeMessageExpected =
                 std::static_pointer_cast<AcknowledgeMessage>(message);
-            QCOMPARE(acknowledgeMessageActual->ack, acknowledgeMessageExpected->ack);
+            QCOMPARE(acknowledgeMessageActual->ack,
+                     acknowledgeMessageExpected->ack);
             break;
         }
         case Message::MessageID::TEXT:
         {
             std::shared_ptr<TextMessage> textMessageActual =
-                std::static_pointer_cast<TextMessage>(messenger.retrieveMessage());
+                std::static_pointer_cast<TextMessage>(
+                        messenger.retrieveMessage());
             std::shared_ptr<TextMessage> textMessageExpected =
                 std::static_pointer_cast<TextMessage>(message);
             QCOMPARE(textMessageActual->text, textMessageExpected->text);

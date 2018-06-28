@@ -30,6 +30,9 @@ private Q_SLOTS:
     void test_request_message_data();
     void test_request_message();
 
+    void test_request_message_with_info_data();
+    void test_request_message_with_info();
+
     void test_text_message_data();
     void test_text_message();
 

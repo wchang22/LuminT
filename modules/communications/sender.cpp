@@ -246,7 +246,8 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
             if (messageState == MessageState::MESSAGE)
                 return;
 
-            int packetNumber = request->requestInfo.toInt();
+            uint32_t packetNumber = static_cast<uint32_t>(
+                                        request->requestInfo.toULong());
             FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
 
