@@ -27,7 +27,8 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<Sender>("communications", 1, 0, "Sender",
         QStringLiteral("Sender should not be created in QML"));
 
-    qmlRegisterUncreatableType<RegisterDeviceList>("qml", 1, 0, "RegisterDeviceList",
+    qmlRegisterUncreatableType<RegisterDeviceList>("qml", 1, 0,
+                                                   "RegisterDeviceList",
         QStringLiteral("RegisterDeviceList should not be created in QML"));
 
     qmlRegisterType<RegisterDeviceModel>("qml", 1, 0, "RegisterDeviceModel");
@@ -50,9 +51,12 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(
                 QStringLiteral("registerDeviceList"), &registerDeviceList);
-    engine.rootContext()->setContextProperty(QStringLiteral("sender"), &sender);
-    engine.rootContext()->setContextProperty(QStringLiteral("receiver"), &receiver);
-    engine.rootContext()->setContextProperty(QStringLiteral("utilities"), &utilities);
+    engine.rootContext()->setContextProperty(QStringLiteral("sender"),
+                                             &sender);
+    engine.rootContext()->setContextProperty(QStringLiteral("receiver"),
+                                             &receiver);
+    engine.rootContext()->setContextProperty(QStringLiteral("utilities"),
+                                             &utilities);
 
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
     if (engine.rootObjects().isEmpty())
