@@ -6,6 +6,9 @@
 #include "modules/communications/receiver.hpp"
 #include "modules/communications/sender.hpp"
 
+Q_DECLARE_METATYPE(std::shared_ptr<InfoMessage>)
+Q_DECLARE_METATYPE(std::shared_ptr<RequestMessage>)
+
 class TestDataTransfer : public QObject
 {
     Q_OBJECT
@@ -16,8 +19,16 @@ public:
 private Q_SLOTS:
     void initTestCase();
     void cleanupTestCase();
+
     void test_send_text_data();
     void test_send_text();
+
+    void test_send_file_data();
+    void test_send_file();
+
+    void test_cancel_file();
+
+    void test_pause_file();
 
 private:
     RegisterDeviceList senderRegisterDeviceList;

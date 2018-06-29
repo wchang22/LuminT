@@ -43,3 +43,5 @@ HEADERS += \
 
 RESOURCES += \
         ../../qml.qrc
+
+DEFINES += CWD=\\\"$$PWD\\\"
