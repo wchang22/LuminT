@@ -20,8 +20,7 @@ bool Messenger::frame(Message &message)
         return false;
 
     for (int i = 0; i < LuminT::MESSAGE_SIZE_BYTES; i++)
-        messageData.prepend(static_cast<char>(
-                           (messageSize >> (i * LuminT::BYTE)) & 0xFF));
+        messageData.prepend(static_cast<char>((messageSize >> (i * LuminT::BYTE)) & 0xFF));
 
     messageData.prepend(static_cast<char>(message.type()));
 
@@ -38,8 +37,7 @@ bool Messenger::frame(FileMessage &message)
         return false;
 
     for (int i = 0; i < LuminT::SEQ_BYTES; i++)
-        messageData.prepend(static_cast<char>(
-                           (message.seq >> (i * LuminT::BYTE)) & 0xFF));
+        messageData.prepend(static_cast<char>((message.seq >> (i * LuminT::BYTE)) & 0xFF));
 
     return true;
 }
@@ -50,8 +48,7 @@ bool Messenger::sendMessage(Message &message)
         return false;
 
     const int bytesWritten = dataStream.writeRawData(
-                                reinterpret_cast<const char*>(
-                                messageData.constData()),
+                                reinterpret_cast<const char*>(messageData.constData()),
                                 messageData.size());
 
     if (bytesWritten != messageData.size())
@@ -67,8 +64,7 @@ bool Messenger::sendMessage(FileMessage &message)
         return false;
 
     const int bytesWritten = dataStream.writeRawData(
-                                reinterpret_cast<const char*>(
-                                messageData.constData()),
+                                reinterpret_cast<const char*>(messageData.constData()),
                                 messageData.size());
 
     if (bytesWritten != messageData.size())
@@ -116,9 +112,8 @@ bool Messenger::readMessage()
     }
 
     messageID.resize(LuminT::MESSAGE_ID_BYTES);
-    if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()),
-                               LuminT::MESSAGE_ID_BYTES) !=
-                               LuminT::MESSAGE_ID_BYTES)
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageID.data()), LuminT::MESSAGE_ID_BYTES)
+        != LuminT::MESSAGE_ID_BYTES)
     {
         dataStream.rollbackTransaction();
         return false;
@@ -153,12 +148,11 @@ bool Messenger::readMessage()
 
     for (int i = 0; i < LuminT::MESSAGE_SIZE_BYTES; i++)
          messageContentSize += (static_cast<uint8_t>(messageSize.at(i)) <<
-                               ((LuminT::MESSAGE_SIZE_BYTES  - i - 1) *
-                                 LuminT::BYTE));
+                               ((LuminT::MESSAGE_SIZE_BYTES  - i - 1) * LuminT::BYTE));
 
     messageContent.resize(messageContentSize);
-    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
-                               messageContentSize) != messageContentSize)
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()), messageContentSize)
+        != messageContentSize)
     {
         dataStream.rollbackTransaction();
         return false;
@@ -192,8 +186,8 @@ bool Messenger::readFile(uint32_t packetSize)
     }
 
     messageSeq.resize(LuminT::SEQ_BYTES);
-    if (dataStream.readRawData(reinterpret_cast<char*>(messageSeq.data()),
-                               LuminT::SEQ_BYTES) < LuminT::SEQ_BYTES)
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageSeq.data()), LuminT::SEQ_BYTES)
+        < LuminT::SEQ_BYTES)
     {
         dataStream.rollbackTransaction();
         return false;
@@ -208,8 +202,8 @@ bool Messenger::readFile(uint32_t packetSize)
     messageData.append(messageSeq);
 
     messageContent.resize(packetSize);
-    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
-                               packetSize) < packetSize)
+    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()), packetSize)
+        < packetSize)
     {
         dataStream.rollbackTransaction();
         return false;

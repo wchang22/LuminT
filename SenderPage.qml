@@ -229,12 +229,14 @@ ScrollView {
                 sendTextArea.enabled = true;
                 sendTextButtonRow.enabled = true;
                 sendFileRow.enabled = true;
+                sendFileButtonRow.enabled = true;
             }
             onFileCompleted:
             {
                 sendTextArea.enabled = true;
                 sendTextButtonRow.enabled = true;
                 sendFileRow.enabled = true;
+                sendFileButtonRow.enabled = true;
             }
         }
 
@@ -354,6 +356,7 @@ ScrollView {
                                 sendTextArea.enabled = false;
                                 sendTextButtonRow.enabled = false;
                                 sendFileRow.enabled = false;
+                                sendFileButtonRow.enabled = false;
                             }
                         }
                     }

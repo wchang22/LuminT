@@ -9,8 +9,7 @@ QByteArray Utilities::uint32ToByteArray(uint32_t integer)
 {
     QByteArray byteArray;
     for (int i = 0; i < LuminT::UINT32_BYTE_REP; i++)
-        byteArray.prepend(static_cast<char>(
-                         ((integer >> (i * LuminT::BYTE))) & 0xFF));
+        byteArray.prepend(static_cast<char>(((integer >> (i * LuminT::BYTE))) & 0xFF));
 
     return byteArray;
 }

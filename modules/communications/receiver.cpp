@@ -27,17 +27,12 @@ Receiver::Receiver(QObject *parent)
                   QStandardPaths::DocumentsLocation)[0] + QDir::separator())
     , currentFile()
 {
-    connect(this, &Receiver::receivedInfo,
-            this, &Receiver::handleInfo);
-    connect(this, &Receiver::receivedAcknowledge,
-            this, &Receiver::handleAcknowledge);
-    connect(this, &Receiver::receivedPacket,
-            this, &Receiver::handlePacket);
-    connect(this, &Receiver::fileCompleted,
-            this, &Receiver::saveFile);
+    connect(this, &Receiver::receivedInfo, this, &Receiver::handleInfo);
+    connect(this, &Receiver::receivedAcknowledge, this, &Receiver::handleAcknowledge);
+    connect(this, &Receiver::receivedPacket, this, &Receiver::handlePacket);
+    connect(this, &Receiver::fileCompleted, this, &Receiver::saveFile);
 
-    connect(&encryptingTimer, &QTimer::timeout,
-            this, &Receiver::encryptingTimeout);
+    connect(&encryptingTimer, &QTimer::timeout, this, &Receiver::encryptingTimeout);
     encryptingTimer.setSingleShot(true); // timer fires only once
 }
 
@@ -67,12 +62,9 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
         return;
 
-    connect(serverSocket, &QSslSocket::encrypted,
-            this, &Receiver::socketReady);
-    connect(serverSocket, &QSslSocket::readyRead,
-            this, &Receiver::handleReadyRead);
-    connect(serverSocket, &QSslSocket::disconnected,
-            this, &Receiver::socketDisconnected);
+    connect(serverSocket, &QSslSocket::encrypted, this, &Receiver::socketReady);
+    connect(serverSocket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
+    connect(serverSocket, &QSslSocket::disconnected, this, &Receiver::socketDisconnected);
 
     this->addPendingConnection(serverSocket);
 
@@ -192,12 +184,9 @@ void Receiver::stopServer()
         return;
     }
 
-    disconnect(serverSocket, &QSslSocket::encrypted,
-            this, &Receiver::socketReady);
-    disconnect(serverSocket, &QSslSocket::readyRead,
-            this, &Receiver::handleReadyRead);
-    disconnect(serverSocket, &QSslSocket::disconnected,
-            this, &Receiver::socketDisconnected);
+    disconnect(serverSocket, &QSslSocket::encrypted, this, &Receiver::socketReady);
+    disconnect(serverSocket, &QSslSocket::readyRead, this, &Receiver::handleReadyRead);
+    disconnect(serverSocket, &QSslSocket::disconnected, this, &Receiver::socketDisconnected);
 
     serverSocket->abort();
 
@@ -249,8 +238,7 @@ void Receiver::handleReadyRead()
                                   messenger.retrieveMessage()));
                 break;
             case Message::MessageID::ACKNOWLEDGE:
-                emit receivedAcknowledge(std::static_pointer_cast<
-                                         AcknowledgeMessage>(
+                emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
                                          messenger.retrieveMessage()));
                 break;
             case Message::MessageID::TEXT:
@@ -263,8 +251,7 @@ void Receiver::handleReadyRead()
         return;
     }
 
-    int64_t remainingBytes = currentFileSize - LuminT::PACKET_BYTES *
-                             currentPacketNumber;
+    int64_t remainingBytes = currentFileSize - LuminT::PACKET_BYTES * currentPacketNumber;
     uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES) ?
                                    LuminT::PACKET_BYTES : remainingBytes;
 
@@ -273,8 +260,7 @@ void Receiver::handleReadyRead()
 
     if (messageState == MessageState::FILE_ABORTING)
     {
-        RequestMessage cancelFile(
-            RequestMessage::Request::CANCEL_FILE_TRANSFER);
+        RequestMessage cancelFile(RequestMessage::Request::CANCEL_FILE_TRANSFER);
         messenger.sendMessage(cancelFile);
 
         messageState = MessageState::MESSAGE;
@@ -282,15 +268,13 @@ void Receiver::handleReadyRead()
     }
 
     emit receivedPacket(messenger.retrieveFile());
-    emit receiveProgress((double) LuminT::PACKET_BYTES *
-                         ++currentPacketNumber / currentFileSize);
+    emit receiveProgress((double) LuminT::PACKET_BYTES * ++currentPacketNumber / currentFileSize);
 
     if (remainingBytes - LuminT::PACKET_BYTES <= 0)
     {
         emit fileCompleted();
 
-        AcknowledgeMessage fileSuccess(
-            AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
+        AcknowledgeMessage fileSuccess(AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
         messenger.sendMessage(fileSuccess);
 
         messageState = MessageState::MESSAGE;
@@ -356,8 +340,8 @@ void Receiver::handleDeviceKey(QString deviceKey)
 
 void Receiver::handleFileInfo(QByteArray &info)
 {
-    currentFileSize = Utilities::byteArrayToUint32(
-                      info.left(LuminT::MAX_FILE_SIZE_REP));
+    currentFileSize = Utilities::byteArrayToUint32(info.left(LuminT::MAX_FILE_SIZE_REP));
+
     QString fileName(info.mid(LuminT::MAX_FILE_SIZE_REP));
     currentPacketNumber = 0; 
 
@@ -441,8 +425,7 @@ void Receiver::sendFileError()
 
 void Receiver::requestFirstPacket()
 {
-    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(0));
+    RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET, QByteArray::number(0));
     messenger.sendMessage(requestPacket);
 
     messageState = MessageState::FILE_SENDING;

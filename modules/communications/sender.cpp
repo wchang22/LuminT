@@ -25,21 +25,15 @@ Sender::Sender(QObject *parent)
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
-    connect(&clientSocket, &QSslSocket::connected,
-            this, &Sender::socketConnected);
-    connect(&clientSocket, &QSslSocket::encrypted,
-            this, &Sender::socketReady);
-    connect(&clientSocket, &QSslSocket::disconnected,
-            this, &Sender::socketDisconnected);
-    connect(&clientSocket, &QSslSocket::readyRead,
-            this, &Sender::handleReadyRead);
+    connect(&clientSocket, &QSslSocket::connected, this, &Sender::socketConnected);
+    connect(&clientSocket, &QSslSocket::encrypted, this, &Sender::socketReady);
+    connect(&clientSocket, &QSslSocket::disconnected, this, &Sender::socketDisconnected);
+    connect(&clientSocket, &QSslSocket::readyRead, this, &Sender::handleReadyRead);
     connect(this, &Sender::receivedInfo, this, &Sender::handleInfo);
     connect(this, &Sender::receivedRequest, this, &Sender::handleRequest);
-    connect(this, &Sender::receivedAcknowledge,
-            this, &Sender::handleAcknowledge);
+    connect(this, &Sender::receivedAcknowledge, this, &Sender::handleAcknowledge);
 
-    connect(&encryptingTimer, &QTimer::timeout,
-            this, &Sender::encryptingTimeout);
+    connect(&encryptingTimer, &QTimer::timeout, this, &Sender::encryptingTimeout);
     encryptingTimer.setSingleShot(true); // timer fires only once
 }
 
@@ -185,8 +179,7 @@ void Sender::handleReadyRead()
                                  messenger.retrieveMessage()));
             break;
         case Message::MessageID::ACKNOWLEDGE:
-            emit receivedAcknowledge(std::static_pointer_cast<
-                                     AcknowledgeMessage>(
+            emit receivedAcknowledge(std::static_pointer_cast<AcknowledgeMessage>(
                                      messenger.retrieveMessage()));
             break;
         default:
@@ -246,13 +239,11 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
             if (messageState == MessageState::MESSAGE)
                 return;
 
-            uint32_t packetNumber = static_cast<uint32_t>(
-                                        request->requestInfo.toULong());
+            uint32_t packetNumber = static_cast<uint32_t>(request->requestInfo.toULong());
             FileMessage filePacket(currentFilePath, packetNumber);
             messenger.sendMessage(filePacket);
 
-            emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES /
-                              currentFileSize);
+            emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES / currentFileSize);
             break;
         }
         case RequestMessage::Request::CANCEL_FILE_TRANSFER:
@@ -323,10 +314,11 @@ bool Sender::sendFile(QString filePath)
     currentFileSize = file.size();
 
     // Todo: Error if max file size exceeded
-    if (currentFileSize > LuminT::MAX_FILE_SIZE)
+    if (currentFileSize > LuminT::MAX_FILE_SIZE || currentFileSize <= 0)
         return false;
 
     QString fileName(currentFilePath.split("/").last());
+
     QByteArray info;
     info.append(Utilities::uint32ToByteArray(currentFileSize));
     info.append(fileName);
