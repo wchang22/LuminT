@@ -6,12 +6,11 @@ import qml 1.0
 
 Page {
     id: registerPage
-    objectName: "registerPage"
 
     ColumnLayout {
         id: columnLayout
-        spacing: 10
         anchors.fill: parent
+        spacing: 10
 
         Label {
             id: label

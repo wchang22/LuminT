@@ -4,11 +4,13 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: senderWaitingPage
-    objectName: "senderWaitingPage"
 
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent
+        Keys.onReleased:
+            if (event.key === Qt.Key_Return)
+                receiverIDButton.clicked()
 
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
@@ -19,7 +21,7 @@ Page {
 
                 Label {
                     id: receiverIDLabel
-                    text: qsTr("Enter Receiver ID: ")
+                    text: qsTr("Receiver ID: ")
                     font.pointSize: 20
                     font.bold: true
                 }
@@ -39,7 +41,7 @@ Page {
                     width: 80
                     text: qsTr("Start")
                     font.bold: true
-                    focusPolicy: Qt.NoFocus
+
                     onClicked: {
                         sender.setPeerIPAddress(receiverIDField.text)
 
@@ -82,7 +84,7 @@ Page {
             text: qsTr("Waiting for Receiver")
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
             font.bold: true
-            font.pointSize: 40
+            font.pointSize: 35
             visible: false
         }
 

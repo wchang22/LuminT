@@ -1,4 +1,5 @@
 import QtQuick 2.10
+import QtQuick.Window 2.3
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 import Qt.labs.platform 1.0
@@ -8,10 +9,12 @@ import utilities 1.0
 import communications 1.0
 
 ScrollView {
+    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
     Page {
         id: receiverPage
-        padding: 30
-        objectName: "receiverPage"
+        padding: 15
+        width: (Qt.platform.os == "android") ? Screen.width : 480
 
         Connections {
             target: receiver
@@ -57,9 +60,8 @@ ScrollView {
 
         Popup {
             id: fileExistsPopup
-            x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300
+            width: parent.width
             height: 200
             modal: true
             closePolicy: Popup.NoAutoClose
@@ -99,10 +101,9 @@ ScrollView {
 
         Popup {
             id: fileErrorPopup
-            x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300
-            height: 100
+            width: parent.width
+            height: 200
             modal: true
             closePolicy: Popup.NoAutoClose
             ColumnLayout {
@@ -125,11 +126,12 @@ ScrollView {
         ColumnLayout {
             id: receiverColumnLayout
             anchors.fill: parent
+            spacing: 30
 
             ColumnLayout {
                 id: receiveTextColumnLayout
+                Layout.fillWidth: true
                 spacing: 20
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
                 Label {
                     id: receiveTextLabel
@@ -145,7 +147,6 @@ ScrollView {
                     text: qsTr("")
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     placeholderText: "Wait for text"
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     Layout.fillWidth: true
                     Layout.minimumHeight: 100
                     horizontalAlignment: Text.AlignLeft
@@ -155,31 +156,30 @@ ScrollView {
 
                 Row {
                     id: receiveTextButtonRow
-                    width: 200
+                    Layout.fillWidth: true
                     height: 50
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                    spacing: 5
+
                     Button {
                         id: clipboardCopyButton
-                        width: 100
+                        width: (parent.width - parent.spacing * 2) / 3
                         text: qsTr("Copy")
                         onClicked: utilities.copy(receiveTextArea.text)
                     }
 
                     Button {
                         id: clipboardPasteButton
-                        width: 100
+                        width: (parent.width - parent.spacing * 2) / 3
                         text: qsTr("Paste")
                         onClicked: receiveTextArea.text = utilities.paste()
                     }
 
                     Button {
                         id: clearButton
-                        width: 100
+                        width: (parent.width - parent.spacing * 2) / 3
                         text: qsTr("Clear")
                         onClicked: receiveTextArea.text = ""
                     }
-
-                    spacing: 5
                 }
             }
 
@@ -187,7 +187,6 @@ ScrollView {
                 id: receiveFileColumnLayout
                 Layout.fillWidth: true
                 spacing: 20
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                 Label {
                     id: receiveFileLabel
@@ -199,22 +198,20 @@ ScrollView {
 
                 Row {
                     id: receiveFileRow
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillWidth: false
+                    Layout.fillWidth: true
+                    spacing: 5
+
                     Label {
                         id: receiveFileNameLabel
                         text: qsTr("Destination:")
-                        anchors.verticalCenter: parent.verticalCenter
                         verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
+                        width: (parent.width - parent.spacing) * 0.25
+                        height: 32
                     }
 
                     TextField {
                         id: receiveFileNameField
-                        width: 232
-                        anchors.verticalCenter: parent.verticalCenter
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
+                        width: (parent.width - parent.spacing) * 0.75
                         readOnly: true
                         selectByMouse: true
                         Component.onCompleted: {
@@ -224,46 +221,57 @@ ScrollView {
                             documents = decodeURIComponent(documents)
                             receiveFileNameField.text = documents
                         }
-                    }
+                    } 
+                }
+
+                Row {
+                    id: receiveFileButtonRow
+                    Layout.fillWidth: true
+                    layoutDirection: Qt.RightToLeft
 
                     Button {
                         id: receiveFileBrowseButton
-                        width: 75
+                        width: (parent.width - parent.spacing) * 0.25
                         text: qsTr("Browse")
                         onClicked: receiveFileDialog.open()
                     }
-                    spacing: 10
                 }
 
                 Row {
                     id: receiveFileProgressRow
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    spacing: 25
+                    Layout.fillWidth: true
+                    spacing: 5
+
                     Label {
                         id: receiveFileProgressLabel
-                        text: qsTr("Receiving Progress:")
-                        anchors.verticalCenter: parent.verticalCenter
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
+                        text: qsTr("Progress:")
+                        width: (parent.width - parent.spacing) * 0.25
                     }
 
                     ProgressBar {
                         id: receiveFileProgressBar
-                        width: 250
+                        width: (parent.width - parent.spacing) * 0.75
                         height: 20
-                        anchors.verticalCenter: parent.verticalCenter
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                         value: 0
                     }
                 }
 
                 Row {
                     id: receiveFileUtilitiesRow
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 10
+                    Layout.fillWidth: true
+                    layoutDirection: Qt.RightToLeft
+                    spacing: 5
+
+                    Button {
+                        id: receiveFileCancelButton
+                        width: (parent.width - parent.spacing) * 0.25
+                        text: qsTr("Cancel")
+                        onClicked: receiver.cancelFileTransfer()
+                    }
+
                     Button {
                         id: receiveFilePauseButton
-                        width: 100
+                        width: (parent.width - parent.spacing) * 0.25
                         text: qsTr("Pause")
                         onClicked: {
                             if (this.text === "Pause")
@@ -272,12 +280,7 @@ ScrollView {
                                 receiver.resumeFileTransfer()
                         }
                     }
-                    Button {
-                        id: receiveFileCancelButton
-                        width: 100
-                        text: qsTr("Cancel")
-                        onClicked: receiver.cancelFileTransfer()
-                    }
+
                 }
             }
 

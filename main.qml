@@ -1,4 +1,5 @@
 import QtQuick 2.10
+import QtQuick.Window 2.3
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 
@@ -6,8 +7,8 @@ import communications 1.0
 
 ApplicationWindow {
     visible: true
-    width: 480
-    height: 480
+    width: (Qt.platform.os == "android") ? Screen.width : 480
+    height: (Qt.platform.os == "android") ? Screen.height : 480
     title: qsTr("LuminT") 
     onClosing: close.accepted = true
 

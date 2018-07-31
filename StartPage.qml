@@ -6,7 +6,6 @@ import communications 1.0
 
 Page {
     id: startPage
-    objectName: "startPage"
     title: qsTr("LuminT")
 
     ColumnLayout {

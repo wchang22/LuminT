@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: connectionErrorPage
-    objectName: "connectionErrorPage"
 
     ColumnLayout {
         id: columnLayout
