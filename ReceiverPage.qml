@@ -1,72 +1,237 @@
 import QtQuick 2.10
+import QtQuick.Window 2.3
 import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 import Qt.labs.platform 1.0
 import QtQuick.Dialogs 1.2
+import Qt.labs.folderlistmodel 2.2
 
 import utilities 1.0
 import communications 1.0
 
 ScrollView {
+    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
     Page {
         id: receiverPage
-        padding: 30
-        objectName: "receiverPage"
+        padding: 15
+        width: (Qt.platform.os == 'android') ? Screen.width : 480
+
+        function cleanPath(path)
+        {
+            var filePath;
+            if (Qt.platform.os == 'windows')
+                filePath = path.toString().replace(/^(file:\/{3})/,'');
+            else
+                filePath = path.toString().replace(/^(file:\/{2})/,'');
+            filePath = decodeURIComponent(filePath);
+            return filePath;
+        }
 
         Connections {
             target: receiver
-            onReceivedText: receiveTextArea.text = text
+            onReceivedText: receiverTextArea.text = text
             onReceiveProgress:
             {
-                receiveFileProgressBar.value = progress
-                if (receiveFilePauseButton.text == "Resume")
-                    receiveFilePauseButton.text = "Pause"
+                receiverFileProgressBar.value = progress;
+                if (receiverFilePauseButton.text == 'Resume')
+                    receiverFilePauseButton.text = 'Pause';
             }
             onFileStatus: {
                 switch(status)
                 {
                     case Receiver.FileState.EXISTS:
-                        fileExistsField.text = fileName
-                        fileExistsPopup.open()
+                        fileExistsField.text = fileName;
+                        fileExistsPopup.open();
                         break
                     case Receiver.FileState.ERROR:
-                        fileErrorPopup.open()
+                        fileErrorPopup.open();
                         break
                     case Receiver.FileState.OK:
-                        receiver.requestFirstPacket()
+                        receiver.requestFirstPacket();
                 }
             }
-            onFilePaused: receiveFilePauseButton.text = "Resume"
-            onFileResumed: receiveFilePauseButton.text = "Pause"
+            onFilePaused: receiverFilePauseButton.text = 'Resume'
+            onFileResumed: receiverFilePauseButton.text = 'Pause'
         }
 
         FolderDialog {
-            id: receiveFileDialog
-            title: qsTr("Select a folder")
+            id: receiverFolderDialog
+            title: qsTr('Select a folder')
             folder: StandardPaths.standardLocations(
                         StandardPaths.DocumentsLocation)[0]
             onAccepted: {
-                var folderPath = receiveFileDialog.folder.toString()
-                folderPath = folderPath.replace(/^(file:\/{3})/,"")
-                folderPath = decodeURIComponent(folderPath)
-                receiveFileNameField.text = folderPath
+                receiverFolderNameField.text = receiverPage.cleanPath(
+                    receiverFolderDialog.folder.toString());
 
-                receiver.setFilePath(folderPath)
+                receiver.setFilePath(receiverFolderNameField.text);
+            }
+        }
+
+        Popup {
+            id: receiverFolderDialogAndroid
+            width: parent.width
+            height: Screen.height * 0.75
+            closePolicy: Popup.NoAutoClose
+
+            ListView {
+                anchors.fill: parent
+                boundsMovement: Flickable.StopAtBounds
+                displayMarginBeginning: -40
+                displayMarginEnd: -88
+
+                FolderListModel {
+                    id: receiverFolderDialogAndroidModel
+                    showDirsFirst: true
+                    folder: (Qt.platform.os == 'android') ?
+                        StandardPaths.standardLocations(StandardPaths.GenericDataLocation)[0] + '/'
+                        : StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0] + '/'
+                }
+
+                Component {
+                    id: receiverFolderDialogAndroidDelegate
+                    RowLayout {
+                        width: parent.width
+                        spacing: 0
+
+                        TextField {
+                            id: receiverFolderDialogAndroidItem
+                            text: fileName
+                            font.pointSize: 12
+                            padding: 15
+                            Layout.preferredWidth: fileIsDir ? parent.width : parent.width * 0.8
+                            readOnly: true
+
+                            onReleased:
+                            {
+                                if (!fileIsDir)
+                                    return;
+
+                                receiverFolderDialogAndroidModel.folder += fileName + '/';
+                            }
+
+                            onHoveredChanged:
+                            {
+                                if (this.hovered)
+                                    this.background.color = 'white';
+                                else
+                                    this.background.color = 'transparent';
+                            }
+
+                            Component.onCompleted:
+                            {
+                                this.background.color = 'transparent';
+                                this.background.border.width = 1;
+                                this.background.border.color = 'gray';
+                            }
+                        }
+
+                        Label {
+                            font.pointSize: 12
+                            padding: 5
+                            visible: fileIsDir ? false : true
+                            Layout.preferredWidth: parent.width * 0.2
+                            Component.onCompleted:
+                            {
+                                var magnitude = Math.floor(Math.log(fileSize) / Math.log(1000));
+                                var magnitudeToByteUnit = ['B', 'KB', 'MB', 'GB'];
+                                this.text = (fileSize / Math.pow(1024, magnitude))
+                                             .toFixed(2).toString() + ' ' +
+                                             magnitudeToByteUnit[magnitude];
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: receiverFolderDialogAndroidHeader
+                    Rectangle {
+                        width: parent.width
+                        height: 32
+                        z: 2
+
+                        Row {
+                            width: parent.width
+
+                            Button {
+                                text: qsTr('‹')
+                                width: parent.width * 0.2
+                                onClicked:
+                                {
+                                    if (Qt.platform.os == 'android' &&
+                                        receiverFolderDialogAndroidModel.folder ==
+                                        StandardPaths.standardLocations(
+                                            StandardPaths.GenericDataLocation)[0] + '/')
+                                        return;
+
+                                    var pathList = receiverPage.cleanPath(
+                                        receiverFolderDialogAndroidModel.folder).split('/');
+
+                                    if (pathList.length <= 2)
+                                        return;
+
+                                    var newPathList = pathList.slice(
+                                        ((Qt.platform.os == 'windows') ? 0 : 1), -2);
+                                    receiverFolderDialogAndroidModel.folder =
+                                        'file:///' + newPathList.join('/') + '/';
+                                }
+                            }
+
+                            TextField {
+                                width: parent.width * 0.8
+                                text: receiverPage.cleanPath(
+                                          receiverFolderDialogAndroidModel.folder)
+                                readOnly: true
+                                Component.onCompleted:
+                                {
+                                    this.background.color = 'transparent';
+                                    this.background.border.width = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Component {
+                    id: receiverFolderDialogAndroidFooter
+                    DialogButtonBox {
+                        z: 2
+                        standardButtons: Dialog.Ok | Dialog.Cancel
+                        width: parent.width
+                        onAccepted:
+                        {
+                            receiverFolderDialogAndroid.close();
+                            receiverFolderNameField.text = receiverPage.cleanPath(
+                                                        receiverFolderDialogAndroidModel.folder);
+                            receiver.setFilePath(receiverFolderNameField.text);
+                        }
+                        onRejected:
+                        {
+                            receiverFolderDialogAndroid.close();
+                        }
+                    }
+                }
+
+                model: receiverFolderDialogAndroidModel
+                delegate: receiverFolderDialogAndroidDelegate
+                header: receiverFolderDialogAndroidHeader
+                headerPositioning: ListView.OverlayHeader
+                footer: receiverFolderDialogAndroidFooter
+                footerPositioning: ListView.OverlayFooter
             }
         }
 
         Popup {
             id: fileExistsPopup
-            x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300
+            width: parent.width
             height: 200
             modal: true
             closePolicy: Popup.NoAutoClose
             ColumnLayout {
                 anchors.fill: parent
                 Label {
-                    text: qsTr("File already exists. Enter a new name: ")
+                    text: qsTr('File already exists. Enter a new name: ')
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 }
                 TextField {
@@ -78,19 +243,19 @@ ScrollView {
                     Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                     spacing: 10
                     Button {
-                        text: qsTr("Create")
+                        text: qsTr('Create')
                         width: 75
                         onClicked: {
-                            fileExistsPopup.close()
-                            receiver.createFile(fileExistsField.text)
+                            fileExistsPopup.close();
+                            receiver.createFile(fileExistsField.text);
                         }
                     }
                     Button {
-                        text: qsTr("Cancel")
+                        text: qsTr('Cancel')
                         width: 75
                         onClicked: {
-                            fileExistsPopup.close()
-                            receiver.sendFileError()
+                            fileExistsPopup.close();
+                            receiver.sendFileError();
                         }
                     }
                 }
@@ -99,24 +264,24 @@ ScrollView {
 
         Popup {
             id: fileErrorPopup
-            x: (parent.width - width) / 2
             y: (parent.height - height) / 2
-            width: 300
-            height: 100
+            width: parent.width
+            height: 200
             modal: true
             closePolicy: Popup.NoAutoClose
             ColumnLayout {
                 anchors.fill: parent
                 Label {
-                    text: qsTr("There was an error creating the file.")
+                    text: qsTr('There was an error creating the file.')
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 }
                 Button {
-                    text: qsTr("Ok")
+                    text: qsTr('Ok')
                     Layout.preferredWidth: 75
                     Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                     onClicked: {
-                        fileErrorPopup.close()
+                        fileErrorPopup.close();
+                        receiver.sendFileError();
                     }
                 }
             }
@@ -125,27 +290,27 @@ ScrollView {
         ColumnLayout {
             id: receiverColumnLayout
             anchors.fill: parent
+            spacing: 30
 
             ColumnLayout {
                 id: receiveTextColumnLayout
+                Layout.fillWidth: true
                 spacing: 20
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
                 Label {
-                    id: receiveTextLabel
-                    text: qsTr("Receive Text")
-                    font.family: "Segoe UI"
+                    id: receiverTextLabel
+                    text: qsTr('Receive Text')
+                    font.family: 'Segoe UI'
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     font.bold: true
                     font.pointSize: 20
                 }
 
                 TextArea {
-                    id: receiveTextArea
-                    text: qsTr("")
+                    id: receiverTextArea
+                    text: qsTr('')
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                    placeholderText: "Wait for text"
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                    placeholderText: 'Wait for text'
                     Layout.fillWidth: true
                     Layout.minimumHeight: 100
                     horizontalAlignment: Text.AlignLeft
@@ -154,130 +319,138 @@ ScrollView {
                 }
 
                 Row {
-                    id: receiveTextButtonRow
-                    width: 200
+                    id: receiverTextButtonRow
+                    Layout.fillWidth: true
                     height: 50
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                    spacing: 5
+
                     Button {
                         id: clipboardCopyButton
-                        width: 100
-                        text: qsTr("Copy")
-                        onClicked: utilities.copy(receiveTextArea.text)
+                        width: (parent.width - parent.spacing * 2) / 3
+                        text: qsTr('Copy')
+                        onClicked: utilities.copy(receiverTextArea.text)
                     }
 
                     Button {
                         id: clipboardPasteButton
-                        width: 100
-                        text: qsTr("Paste")
-                        onClicked: receiveTextArea.text = utilities.paste()
+                        width: (parent.width - parent.spacing * 2) / 3
+                        text: qsTr('Paste')
+                        onClicked: receiverTextArea.text = utilities.paste()
                     }
 
                     Button {
                         id: clearButton
-                        width: 100
-                        text: qsTr("Clear")
-                        onClicked: receiveTextArea.text = ""
+                        width: (parent.width - parent.spacing * 2) / 3
+                        text: qsTr('Clear')
+                        onClicked: receiverTextArea.text = ''
                     }
-
-                    spacing: 5
                 }
             }
 
             ColumnLayout {
-                id: receiveFileColumnLayout
+                id: receiverFileColumnLayout
                 Layout.fillWidth: true
                 spacing: 20
-                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
 
                 Label {
-                    id: receiveFileLabel
-                    text: qsTr("Receive File")
+                    id: receiverFileLabel
+                    text: qsTr('Receive File')
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                     font.bold: true
                     font.pointSize: 20
                 }
 
                 Row {
-                    id: receiveFileRow
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    Layout.fillWidth: false
+                    id: receiverFolderRow
+                    Layout.fillWidth: true
+                    spacing: 5
+
                     Label {
-                        id: receiveFileNameLabel
-                        text: qsTr("Destination:")
-                        anchors.verticalCenter: parent.verticalCenter
+                        id: receiverFolderNameLabel
+                        text: qsTr('Destination:')
                         verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
+                        width: (parent.width - parent.spacing) * 0.25
+                        height: 32
                     }
 
                     TextField {
-                        id: receiveFileNameField
-                        width: 232
-                        anchors.verticalCenter: parent.verticalCenter
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
+                        id: receiverFolderNameField
+                        width: (parent.width - parent.spacing) * 0.75
                         readOnly: true
                         selectByMouse: true
                         Component.onCompleted: {
-                            var documents = StandardPaths.standardLocations(
-                                            StandardPaths.DocumentsLocation)[0]
-                            documents = documents.replace(/^(file:\/{3})/,"")
-                            documents = decodeURIComponent(documents)
-                            receiveFileNameField.text = documents
+                            var location = (Qt.platform.os == 'android') ?
+                                            StandardPaths.standardLocations(
+                                            StandardPaths.GenericDataLocation)[0] + '/' :
+                                            StandardPaths.standardLocations(
+                                            StandardPaths.DocumentsLocation)[0] + '/';
+                            receiverFolderNameField.text = receiverPage.cleanPath(location);
                         }
-                    }
-
-                    Button {
-                        id: receiveFileBrowseButton
-                        width: 75
-                        text: qsTr("Browse")
-                        onClicked: receiveFileDialog.open()
-                    }
-                    spacing: 10
+                    } 
                 }
 
                 Row {
-                    id: receiveFileProgressRow
-                    Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-                    spacing: 25
+                    id: receiverFolderButtonRow
+                    Layout.fillWidth: true
+                    layoutDirection: Qt.RightToLeft
+
+                    Button {
+                        id: receiverFolderBrowseButton
+                        width: (parent.width - parent.spacing) * 0.25
+                        text: qsTr('Browse')
+                        onClicked: {
+                            if (Qt.platform.os == 'android')
+                                receiverFolderDialogAndroid.open();
+                            else
+                                receiverFolderDialog.open();
+                        }
+                    }
+                }
+
+                Row {
+                    id: receiverFileProgressRow
+                    Layout.fillWidth: true
+                    spacing: 5
+
                     Label {
-                        id: receiveFileProgressLabel
-                        text: qsTr("Receiving Progress:")
-                        anchors.verticalCenter: parent.verticalCenter
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignLeft
+                        id: receiverFileProgressLabel
+                        text: qsTr('Progress:')
+                        width: (parent.width - parent.spacing) * 0.25
                     }
 
                     ProgressBar {
-                        id: receiveFileProgressBar
-                        width: 250
+                        id: receiverFileProgressBar
+                        width: (parent.width - parent.spacing) * 0.75
                         height: 20
-                        anchors.verticalCenter: parent.verticalCenter
-                        Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                         value: 0
                     }
                 }
 
                 Row {
-                    id: receiveFileUtilitiesRow
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 10
+                    id: receiverFileUtilitiesRow
+                    Layout.fillWidth: true
+                    layoutDirection: Qt.RightToLeft
+                    spacing: 5
+
                     Button {
-                        id: receiveFilePauseButton
-                        width: 100
-                        text: qsTr("Pause")
-                        onClicked: {
-                            if (this.text === "Pause")
-                                receiver.pauseFileTransfer()
-                            else
-                                receiver.resumeFileTransfer()
-                        }
-                    }
-                    Button {
-                        id: receiveFileCancelButton
-                        width: 100
-                        text: qsTr("Cancel")
+                        id: receiverFileCancelButton
+                        width: (parent.width - parent.spacing) * 0.25
+                        text: qsTr('Cancel')
                         onClicked: receiver.cancelFileTransfer()
                     }
+
+                    Button {
+                        id: receiverFilePauseButton
+                        width: (parent.width - parent.spacing) * 0.25
+                        text: qsTr('Pause')
+                        onClicked: {
+                            if (this.text === 'Pause')
+                                receiver.pauseFileTransfer();
+                            else
+                                receiver.resumeFileTransfer();
+                        }
+                    }
+
                 }
             }
 

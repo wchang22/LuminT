@@ -4,11 +4,13 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: senderWaitingPage
-    objectName: "senderWaitingPage"
 
     ColumnLayout {
         id: columnLayout
         anchors.fill: parent
+        Keys.onReleased:
+            if (event.key === Qt.Key_Return)
+                receiverIDButton.clicked();
 
         ColumnLayout {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
@@ -19,7 +21,7 @@ Page {
 
                 Label {
                     id: receiverIDLabel
-                    text: qsTr("Enter Receiver ID: ")
+                    text: qsTr('Receiver ID: ')
                     font.pointSize: 20
                     font.bold: true
                 }
@@ -27,7 +29,7 @@ Page {
                     id: receiverIDField
                     width: 100
                     font.pointSize: 15
-                    placeholderText: qsTr("Receiver ID")
+                    placeholderText: qsTr('Receiver ID')
                     maximumLength: 3
                     selectByMouse: true
                     validator: RegExpValidator {
@@ -37,9 +39,9 @@ Page {
                 Button {
                     id: receiverIDButton
                     width: 80
-                    text: qsTr("Start")
+                    text: qsTr('Start')
                     font.bold: true
-                    focusPolicy: Qt.NoFocus
+
                     onClicked: {
                         sender.setPeerIPAddress(receiverIDField.text)
 
@@ -47,18 +49,18 @@ Page {
                             parseInt(receiverIDField.text, 10) > 255 ||
                             parseInt(receiverIDField.text, 10) === 0)
                         {
-                            invalidID.visible = true
-                            receiverWaitingLabel.visible = false
-                            receiverWaitingIndicator.visible = false
+                            invalidID.visible = true;
+                            receiverWaitingLabel.visible = false;
+                            receiverWaitingIndicator.visible = false;
                         }
                         else
                         {
-                            sender.connectToReceiver()
-                            invalidID.visible = false
-                            receiverWaitingLabel.visible = true
-                            receiverWaitingIndicator.visible = true
-                            receiverIDField.enabled = false
-                            receiverIDButton.enabled = false
+                            sender.connectToReceiver();
+                            invalidID.visible = false;
+                            receiverWaitingLabel.visible = true;
+                            receiverWaitingIndicator.visible = true;
+                            receiverIDField.enabled = false;
+                            receiverIDButton.enabled = false;
                         }
                     }
                 }
@@ -67,22 +69,22 @@ Page {
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
                 Label {
                     id: invalidID
-                    color: "#e00000"
-                    text: qsTr("*Invalid ID")
-                    font.family: "Segoe UI"
+                    color: '#e00000'
+                    text: qsTr('*Invalid ID')
+                    font.family: 'Segoe UI'
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     font.pointSize: 15
-                    visible: false;
+                    visible: false
                 }
             }
         }
 
         Label {
             id: receiverWaitingLabel
-            text: qsTr("Waiting for Receiver")
+            text: qsTr('Waiting for Receiver')
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
             font.bold: true
-            font.pointSize: 40
+            font.pointSize: 35
             visible: false
         }
 

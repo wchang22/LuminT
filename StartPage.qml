@@ -6,8 +6,7 @@ import communications 1.0
 
 Page {
     id: startPage
-    objectName: "startPage"
-    title: qsTr("LuminT")
+    title: qsTr('LuminT')
 
     ColumnLayout {
         id: columnLayout
@@ -15,7 +14,7 @@ Page {
 
         Label {
             id: title
-            text: qsTr("LuminT")
+            text: qsTr('LuminT')
             Layout.preferredHeight: 70
             Layout.preferredWidth: 180
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
@@ -25,7 +24,7 @@ Page {
 
         Label {
             id: label
-            text: qsTr("Luminous Transfer")
+            text: qsTr('Luminous Transfer')
             font.pointSize: 25
             font.italic: true
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -33,7 +32,7 @@ Page {
 
         Button {
             id: send
-            text: qsTr("Send")
+            text: qsTr('Send')
             Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
             Layout.preferredHeight: 40
             Layout.preferredWidth: 150
@@ -42,7 +41,7 @@ Page {
 
         Button {
             id: receive
-            text: qsTr("Receive")
+            text: qsTr('Receive')
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             Layout.preferredHeight: 40
             Layout.preferredWidth: 150
@@ -51,7 +50,7 @@ Page {
 
         Button {
             id: register
-            text: qsTr("Register Devices")
+            text: qsTr('Register Devices')
             Layout.rowSpan: 1
             Layout.preferredHeight: 40
             Layout.preferredWidth: 150

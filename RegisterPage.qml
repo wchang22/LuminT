@@ -6,18 +6,17 @@ import qml 1.0
 
 Page {
     id: registerPage
-    objectName: "registerPage"
 
     ColumnLayout {
         id: columnLayout
-        spacing: 10
         anchors.fill: parent
+        spacing: 10
 
         Label {
             id: label
-            text: qsTr("Add Devices")
+            text: qsTr('Add Devices')
             font.bold: true
-            font.family: "Segoe UI"
+            font.family: 'Segoe UI'
             Layout.columnSpan: 1
             Layout.rowSpan: 1
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -26,7 +25,7 @@ Page {
 
         Label {
             id: thisKeyLabel
-            font.family: "Segoe UI"
+            font.family: 'Segoe UI'
             Layout.columnSpan: 1
             Layout.rowSpan: 1
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -35,14 +34,14 @@ Page {
 
         Label {
             id: invalidKey
-            color: "#e00000"
-            text: qsTr("*Invalid Device Key")
-            font.family: "Segoe UI"
+            color: '#e00000'
+            text: qsTr('*Invalid Device Key')
+            font.family: 'Segoe UI'
             Layout.columnSpan: 1
             Layout.rowSpan: 1
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             font.pointSize: 15
-            visible: false;
+            visible: false
         }
 
         ListView {
@@ -66,7 +65,7 @@ Page {
                 TextField {
                     id: textField
                     font.pointSize: 15
-                    placeholderText: qsTr("Add 8-digit Device Key")
+                    placeholderText: qsTr('Add 8-digit Device Key')
                     text: deviceKey
                     Layout.preferredWidth: 360
                     Layout.preferredHeight: 40
@@ -96,15 +95,15 @@ Page {
                     font.bold: false
                     onClicked: {
                         if (this.sequence !== 0)
-                            registerDeviceList.removeItem(this.sequence)
+                            registerDeviceList.removeItem(this.sequence);
                         else if (registerDeviceList.checkNewDeviceKey())
                         {
-                            registerDeviceList.insertItem()
-                            textField.text = ""
-                            invalidKey.visible = false
+                            registerDeviceList.insertItem();
+                            textField.text = '';
+                            invalidKey.visible = false;
                         }
                         else
-                            invalidKey.visible = true
+                            invalidKey.visible = true;
                     }
                 }
 
@@ -112,8 +111,8 @@ Page {
             model: RegisterDeviceModel {
                 deviceList: registerDeviceList
                 Component.onCompleted: {
-                    thisKeyLabel.text = qsTr("Your device key: " +
-                                            registerDeviceList.getThisKey())
+                    thisKeyLabel.text = qsTr('Your device key: ' +
+                                            registerDeviceList.getThisKey());
                 }
             }
         }

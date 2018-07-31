@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: connectionUnrecognizedPage
-    objectName: "connectionUnrecognizedPage"
 
     ColumnLayout {
         id: columnLayout
@@ -12,8 +11,8 @@ Page {
 
         Label {
             id: connectionUnrecognizedLabel
-            text: qsTr("Device keys do not match.\n"+
-                       "Make sure both are registered.")
+            text: qsTr('Device keys do not match.\n' +
+                       'Make sure both are registered.')
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             font.bold: true
@@ -22,7 +21,7 @@ Page {
 
         Button {
             id: connectionUnrecognizedReturnButton
-            text: qsTr("Return")
+            text: qsTr('Return')
             focusPolicy: Qt.NoFocus
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredHeight: 40

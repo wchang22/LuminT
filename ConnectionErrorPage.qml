@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: connectionErrorPage
-    objectName: "connectionErrorPage"
 
     ColumnLayout {
         id: columnLayout
@@ -12,7 +11,7 @@ Page {
 
         Label {
             id: connectionErrorLabel
-            text: qsTr("Encryption failed.\nPlease try again.")
+            text: qsTr('Encryption failed.\nPlease try again.')
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             font.bold: true
@@ -21,7 +20,7 @@ Page {
 
         Button {
             id: connectionErrorReturnButton
-            text: qsTr("Return")
+            text: qsTr('Return')
             focusPolicy: Qt.NoFocus
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredHeight: 40

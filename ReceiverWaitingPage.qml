@@ -4,7 +4,6 @@ import QtQuick.Layouts 1.3
 
 Page {
     id: receiverWaitingPage
-    objectName: "receiverWaitingPage"
     Component.onCompleted: receiver.startServer()
 
     ColumnLayout {
@@ -13,18 +12,18 @@ Page {
 
         Label {
             id: idLabel
-            text: qsTr("Your ID is: " + receiver.getThisID())
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+            text: qsTr('ID: ' + receiver.getThisID())
+            Layout.alignment: Qt.AlignHCenter
             font.bold: true
             font.pointSize: 20
         }
 
         Label {
             id: senderWaitingLabel
-            text: qsTr("Waiting for Sender")
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignBottom
+            text: qsTr('Waiting for Sender')
+            Layout.alignment: Qt.AlignHCenter
             font.bold: true
-            font.pointSize: 40
+            font.pointSize: 35
         }
 
         BusyIndicator {
