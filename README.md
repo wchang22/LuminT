@@ -10,3 +10,6 @@ Wireless Data Transfer Software for Text and Files
 * TLS Encryption for secure data transfer
 * Pause/Resume transfer capability
 * Multiplatform (Windows, Linux, Android)
+
+## Note
+* Uses UASMessage from [GCOM](https://github.com/ubcuas/GCOM)
