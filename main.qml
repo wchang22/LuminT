@@ -7,14 +7,14 @@ import communications 1.0
 
 ApplicationWindow {
     visible: true
-    width: (Qt.platform.os == "android") ? Screen.width : 480
-    height: (Qt.platform.os == "android") ? Screen.height : 480
-    title: qsTr("LuminT") 
+    width: (Qt.platform.os == 'android') ? Screen.width : 480
+    height: (Qt.platform.os == 'android') ? Screen.height : 480
+    title: qsTr('LuminT')
     onClosing: close.accepted = true
 
     Component.onCompleted: {
         if (receiver.state() === Receiver.ServerState.ERROR)
-            errorPopup.open()
+            errorPopup.open();
     }
 
     Popup {
@@ -28,17 +28,17 @@ ApplicationWindow {
         ColumnLayout {
             anchors.fill: parent
             Label {
-                text: qsTr("Please make sure you are connected\n"+
-                           "to internet before starting LuminT.\nClosing...")
+                text: qsTr('Please make sure you are connected\n'+
+                           'to internet before starting LuminT.\nClosing...')
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
             }
             Button {
-                text: qsTr("Ok")
+                text: qsTr('Ok')
                 Layout.preferredWidth: 75
                 Layout.alignment: Qt.AlignRight | Qt.AlignBottom
                 onClicked: {
-                    errorPopup.close()
-                    Qt.quit()
+                    errorPopup.close();
+                    Qt.quit();
                 }
             }
         }
@@ -62,11 +62,11 @@ ApplicationWindow {
 
     header: ToolBar {
         ToolButton {
-            text: qsTr("‹")
+            text: qsTr('‹')
             onClicked: {
                 sender.disconnectFromReceiver();
                 receiver.stopServer();
-                window.pop(null)
+                window.pop(null);
             }
         }
     }

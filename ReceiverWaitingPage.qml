@@ -12,7 +12,7 @@ Page {
 
         Label {
             id: idLabel
-            text: qsTr("ID: " + receiver.getThisID())
+            text: qsTr('ID: ' + receiver.getThisID())
             Layout.alignment: Qt.AlignHCenter
             font.bold: true
             font.pointSize: 20
@@ -20,7 +20,7 @@ Page {
 
         Label {
             id: senderWaitingLabel
-            text: qsTr("Waiting for Sender")
+            text: qsTr('Waiting for Sender')
             Layout.alignment: Qt.AlignHCenter
             font.bold: true
             font.pointSize: 35

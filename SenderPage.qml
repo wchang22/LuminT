@@ -29,15 +29,19 @@ ScrollView {
         FileDialog {
             id: senderFileDialog
             title: qsTr('Select a file')
-            folder: StandardPaths.standardLocations(
-                        StandardPaths.DocumentsLocation)[0]
-            onAccepted: sendFileNameField.text = senderPage.cleanPath(filePath)
+            folder: (Qt.platform.os == 'android') ?
+                StandardPaths.standardLocations(StandardPaths.GenericDataLocation)[0] :
+                StandardPaths.standardLocations(StandardPaths.DocumentsLocation)[0]
+            onAccepted:
+            {
+                sendFileNameField.text = senderPage.cleanPath(senderFileDialog.file.toString());
+            }
         }
 
         Popup {
             id: senderFileDialogAndroid
             width: parent.width
-            height: parent.height
+            height: Screen.height * 0.75
             closePolicy: Popup.NoAutoClose
             property string selectedFile
             selectedFile: ''
@@ -82,6 +86,7 @@ ScrollView {
                                     senderFileDialogAndroid.selectedFile = '';
                                 }
                             }
+
                             onActiveFocusChanged:
                             {
                                 // TODO: bug if tab is clicked - won't go back to gray
