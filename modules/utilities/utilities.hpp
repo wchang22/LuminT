@@ -9,10 +9,12 @@
  */
 namespace LuminT
 {
+    // General Constants
     const int UINT32_BYTE_REP = 4; // uint32_t is represented with 4 bytes
 
     const int BYTE = 8; // one byte is 8 bits
     const int KILOBYTE = 1024;
+
     // Message constants
     const int MESSAGE_ID_BYTES = 1;
     const int MESSAGE_SIZE_BYTES = 2;
@@ -32,6 +34,8 @@ namespace LuminT
     // Communications constants
     const int PORT = 4002;
     const int ENCRYPTING_TIMEOUT = 5000; // ms
+    const QString SENDER_FILE_TRANSFER_INFO_NAME("senderFileTransfer.info");
+    const QString RECEIVER_FILE_TRANSFER_INFO_NAME("receiverFileTransfer.info");
 }
 
 class Utilities : public QObject

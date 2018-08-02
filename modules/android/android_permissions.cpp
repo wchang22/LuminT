@@ -1,4 +1,3 @@
-#include <QDebug>
 #include "android_permissions.hpp"
 
 using namespace QtAndroid;

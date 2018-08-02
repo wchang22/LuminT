@@ -2,10 +2,8 @@
 #include <QFile>
 #include <QNetworkInterface>
 #include <QStandardPaths>
-#include <QDir>
 
 #include "receiver.hpp"
-#include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -17,15 +15,15 @@ Receiver::Receiver(QObject *parent)
     , serverState(ServerState::DISCONNECTED)
     , messageState(MessageState::MESSAGE)
     , messenger()
+    , peerKey("")
     , thisID("")
     , ipAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
-    , currentFileSize(0)
-    , currentPacketNumber(0)
-    , currentPath(QStandardPaths::standardLocations(
-                  QStandardPaths::DocumentsLocation)[0] + QDir::separator())
     , currentFile()
+    , fileTransferInfo({
+        QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation)[0] + '/', "", 0, 0, 0,
+      })
 {
     connect(this, &Receiver::receivedInfo, this, &Receiver::handleInfo);
     connect(this, &Receiver::receivedAcknowledge, this, &Receiver::handleAcknowledge);
@@ -150,6 +148,7 @@ bool Receiver::startServer()
 
     serverState = ServerState::CONNECTING;
     messageState = MessageState::MESSAGE;
+
     return true;
 }
 
@@ -172,11 +171,14 @@ void Receiver::stopServer()
     if (this->isListening())
         this->close();
 
+    if (encryptingTimer.isActive())
+        encryptingTimer.stop();
+
     if (currentFile.isOpen())
         currentFile.close();
 
-    if (encryptingTimer.isActive())
-        encryptingTimer.stop();
+    if (messageState == MessageState::FILE_SENDING || messageState == MessageState::FILE_PAUSED)
+        saveFileTransferInfo();
 
     if (serverState == ServerState::CONNECTING)
     {
@@ -220,8 +222,23 @@ Receiver::ServerState Receiver::state() const
     return serverState;
 }
 
+Receiver::MessageState Receiver::getMessageState() const
+{
+    return messageState;
+}
+
+QString Receiver::getCurrentPath() const
+{
+    return fileTransferInfo.folderPath;
+}
+
+float Receiver::getCurrentProgress() const
+{
+    return fileTransferInfo.progress;
+}
+
 //-----------------------------------------------------------------------------
-// Read/Write
+// Handlers
 //-----------------------------------------------------------------------------
 
 void Receiver::handleReadyRead()
@@ -251,7 +268,8 @@ void Receiver::handleReadyRead()
         return;
     }
 
-    int64_t remainingBytes = currentFileSize - LuminT::PACKET_BYTES * currentPacketNumber;
+    int64_t remainingBytes = fileTransferInfo.fileSize -
+                             LuminT::PACKET_BYTES * fileTransferInfo.packetNumber;
     uint32_t expectedPacketSize = (remainingBytes >= LuminT::PACKET_BYTES) ?
                                    LuminT::PACKET_BYTES : remainingBytes;
 
@@ -267,8 +285,10 @@ void Receiver::handleReadyRead()
         return;
     }
 
+    fileTransferInfo.progress = (double) LuminT::PACKET_BYTES * ++fileTransferInfo.packetNumber /
+                                fileTransferInfo.fileSize;
     emit receivedPacket(messenger.retrieveFile());
-    emit receiveProgress((double) LuminT::PACKET_BYTES * ++currentPacketNumber / currentFileSize);
+    emit receiveProgress(fileTransferInfo.progress);
 
     if (remainingBytes - LuminT::PACKET_BYTES <= 0)
     {
@@ -278,6 +298,8 @@ void Receiver::handleReadyRead()
         messenger.sendMessage(fileSuccess);
 
         messageState = MessageState::MESSAGE;
+
+        clearFileTransferInfo();
         return;
     }
 
@@ -293,7 +315,7 @@ void Receiver::handleReadyRead()
     }
 
     RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(currentPacketNumber));
+                                 QByteArray::number(fileTransferInfo.packetNumber));
     messenger.sendMessage(requestPacket);
 }
 
@@ -328,6 +350,9 @@ void Receiver::handleDeviceKey(QString deviceKey)
         InfoMessage info(InfoMessage::InfoType::DEVICE_KEY,
                          registerDeviceList->getThisKey().toUtf8());
         messenger.sendMessage(info);
+
+        peerKey = deviceKey;
+
         return;
     }
 
@@ -340,14 +365,14 @@ void Receiver::handleDeviceKey(QString deviceKey)
 
 void Receiver::handleFileInfo(QByteArray &info)
 {
-    currentFileSize = Utilities::byteArrayToUint32(info.left(LuminT::MAX_FILE_SIZE_REP));
+    fileTransferInfo.fileSize = Utilities::byteArrayToUint32(info.left(LuminT::MAX_FILE_SIZE_REP));
+    fileTransferInfo.fileName = info.mid(LuminT::MAX_FILE_SIZE_REP);
+    fileTransferInfo.packetNumber = 0;
+    fileTransferInfo.progress = 0;
 
-    QString fileName(info.mid(LuminT::MAX_FILE_SIZE_REP));
-    currentPacketNumber = 0; 
+    emit receiveProgress(fileTransferInfo.progress);
 
-    emit receiveProgress(0);
-
-    createFile(fileName);
+    createFile(fileTransferInfo.fileName);
 }
 
 void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
@@ -362,6 +387,20 @@ void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         }
         case AcknowledgeMessage::Acknowledge::DEVICE_KEY_OK:
         {
+            FileTransferInfo retrievedFileTransferInfo = retrieveFileTransferInfo();
+
+            if (retrievedFileTransferInfo.folderPath.length() == 0)
+            {
+                emit connected();
+                return;
+            }
+
+            fileTransferInfo = retrievedFileTransferInfo;
+            messageState = MessageState::FILE_PAUSED;
+
+            currentFile.setFileName(fileTransferInfo.folderPath +
+                                    fileTransferInfo.fileName);
+
             emit connected();
             break;
         }
@@ -381,7 +420,7 @@ void Receiver::handlePacket(std::shared_ptr<FileMessage> packet)
 
 void Receiver::setFilePath(QString path)
 {
-    currentPath = path + QDir::separator();
+    fileTransferInfo.folderPath = path + '/';
 }
 
 void Receiver::createFile(QString name)
@@ -392,7 +431,7 @@ void Receiver::createFile(QString name)
         return;
     }
 
-    currentFile.setFileName(currentPath + name);
+    currentFile.setFileName(fileTransferInfo.folderPath + name);
 
     if (currentFile.exists())
     {
@@ -444,10 +483,11 @@ void Receiver::resumeFileTransfer()
     if (messageState != MessageState::FILE_PAUSED)
         return;
 
-    currentFile.open(QIODevice::Append);
+    currentFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    currentFile.seek(fileTransferInfo.packetNumber * LuminT::PACKET_BYTES);
 
     RequestMessage requestPacket(RequestMessage::Request::FILE_PACKET,
-                                 QByteArray::number(currentPacketNumber));
+                                 QByteArray::number(fileTransferInfo.packetNumber));
     messenger.sendMessage(requestPacket);
 
     messageState = MessageState::FILE_SENDING;
@@ -463,7 +503,8 @@ void Receiver::cancelFileTransfer()
     saveFile();
     currentFile.remove();
 
-    emit receiveProgress(0);
+    fileTransferInfo.progress = 0;
+    emit receiveProgress(fileTransferInfo.progress);
 
     if (messageState != MessageState::FILE_PAUSED)
     {
@@ -475,4 +516,95 @@ void Receiver::cancelFileTransfer()
     messenger.sendMessage(cancelFile);
 
     messageState = MessageState::MESSAGE;
+}
+
+void Receiver::saveFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::RECEIVER_FILE_TRANSFER_INFO_NAME);
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+
+    QDataStream file(&fileTransferInfoFile);
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+    file >> fileTransferInfoMap;
+
+    fileTransferInfoMap.insert(peerKey, fileTransferInfo);
+
+    fileTransferInfoFile.close();
+    fileTransferInfoFile.open(QIODevice::WriteOnly);
+    file << fileTransferInfoMap;
+    fileTransferInfoFile.close();
+}
+
+Receiver::FileTransferInfo Receiver::retrieveFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::RECEIVER_FILE_TRANSFER_INFO_NAME);
+
+    if (!fileTransferInfoFile.exists() || fileTransferInfoFile.size() == 0)
+        return { "", "", 0, 0, 0 };
+
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+    QDataStream file(&fileTransferInfoFile);
+
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+
+    file >> fileTransferInfoMap;
+    fileTransferInfoFile.close();
+
+    if (fileTransferInfoMap.find(peerKey) == fileTransferInfoMap.end())
+        return { "", "", 0, 0, 0 };
+
+    return fileTransferInfoMap[peerKey];
+}
+
+void Receiver::clearFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::RECEIVER_FILE_TRANSFER_INFO_NAME);
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+
+    QDataStream file(&fileTransferInfoFile);
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+    file >> fileTransferInfoMap;
+
+    fileTransferInfoMap.remove(peerKey);
+
+    fileTransferInfoFile.close();
+    fileTransferInfoFile.open(QIODevice::WriteOnly);
+    file << fileTransferInfoMap;
+    fileTransferInfoFile.close();
+}
+
+//-----------------------------------------------------------------------------
+// Overloaded Operators
+//-----------------------------------------------------------------------------
+
+QDataStream &operator<<(QDataStream &out, const QMap<QString, Receiver::FileTransferInfo> &map)
+{
+    QMap<QString, Receiver::FileTransferInfo>::const_iterator i = map.constBegin();
+
+    while (i != map.constEnd())
+    {
+        out << i.key() << i.value().folderPath << i.value().fileName << i.value().fileSize
+            << i.value().packetNumber << i.value().progress;
+        i++;
+    }
+
+    return out;
+}
+
+QDataStream &operator>>(QDataStream &in, QMap<QString, Receiver::FileTransferInfo> &map)
+{
+    QString key;
+    QString folderPath;
+    QString fileName;
+    uint32_t fileSize;
+    uint32_t packetNumber;
+    float progress;
+
+    while (!in.atEnd())
+    {
+        in >> key >> folderPath >> fileName >> fileSize >> packetNumber >> progress;
+        map.insert(key, { folderPath, fileName, fileSize, packetNumber, progress });
+    }
+
+    return in;
 }

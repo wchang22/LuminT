@@ -17,6 +17,16 @@ ScrollView {
         padding: 15
         width: (Qt.platform.os == 'android') ? Screen.width : 480
 
+        Component.onCompleted:
+        {
+            if (receiver.getMessageState() !== Receiver.MessageState.FILE_PAUSED)
+                return;
+
+            receiverFilePauseButton.text = 'Resume'
+            receiverFolderNameField.text = receiver.getCurrentPath();
+            receiverFileProgressBar.value = receiver.getCurrentProgress();
+        }
+
         function cleanPath(path)
         {
             var filePath;

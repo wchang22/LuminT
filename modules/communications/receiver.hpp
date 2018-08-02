@@ -11,6 +11,7 @@
 #include "modules/message/request_message.hpp"
 #include "modules/message/text_message.hpp"
 #include "modules/qml/register_device_list.hpp"
+#include "modules/utilities/utilities.hpp"
 
 /*!
  * \brief The Receiver class, SSL server that listens on a Sender and
@@ -61,6 +62,15 @@ public:
     Receiver(QObject *parent = nullptr);
     ~Receiver();
 
+    struct FileTransferInfo
+    {
+        QString folderPath;
+        QString fileName;
+        uint32_t fileSize;
+        uint32_t packetNumber;
+        float progress;
+    };
+
     enum class ServerState
     {
         ERROR,
@@ -88,6 +98,7 @@ public:
         FILE_PAUSED,
         FILE_ABORTING,
     };
+    Q_ENUM(MessageState)
 
     /*!
      * \brief setup, sets up Receiver's IP and ID (last 1-3 digits of IP)
@@ -130,6 +141,9 @@ signals:
 public slots:
     // Allows qml to query Receiver's state to check for errors
     ServerState state() const;
+    MessageState getMessageState() const;
+    QString getCurrentPath() const;
+    float getCurrentProgress() const;
 
     bool startServer();
     void stopServer();
@@ -175,22 +189,28 @@ private:
 
     void handleFileInfo(QByteArray &info);
 
+    void saveFileTransferInfo();
+    FileTransferInfo retrieveFileTransferInfo();
+    void clearFileTransferInfo();
+
     QSslSocket *serverSocket;
     ServerState serverState;
     MessageState messageState;
 
     Messenger messenger;
 
+    QString peerKey;
     QString thisID;
     QString ipAddress;
     RegisterDeviceList *registerDeviceList;
 
     QTimer encryptingTimer;
 
-    uint32_t currentFileSize;
-    uint32_t currentPacketNumber;
-    QString currentPath;
     QFile currentFile;
+    FileTransferInfo fileTransferInfo;
 };
+
+QDataStream &operator<<(QDataStream &out, const QMap<QString, Receiver::FileTransferInfo> &map);
+QDataStream &operator>>(QDataStream &in, QMap<QString, Receiver::FileTransferInfo> &map);
 
 #endif // RECEIVER_HPP

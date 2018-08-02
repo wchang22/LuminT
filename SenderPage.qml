@@ -7,6 +7,8 @@ import QtQuick.Dialogs 1.2
 import Qt.labs.platform 1.0
 import Qt.labs.folderlistmodel 2.2
 
+import communications 1.0
+
 ScrollView {
     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
@@ -14,6 +16,20 @@ ScrollView {
         id: senderPage
         padding: 15
         width: (Qt.platform.os == 'android') ? Screen.width : 480
+
+        Component.onCompleted:
+        {
+            if (sender.getMessageState() !== Sender.MessageState.FILE_PAUSED)
+                return;
+
+            sendTextArea.enabled = false;
+            sendTextButtonRow.enabled = false;
+            sendFileRow.enabled = false;
+            sendFileButtonRow.enabled = false;
+
+            sendFileNameField.text = sender.getCurrentPath();
+            sendFileProgressBar.value = sender.getCurrentProgress();
+        }
 
         function cleanPath(path)
         {
@@ -125,6 +141,7 @@ ScrollView {
                             Layout.preferredWidth: parent.width * 0.2
                             Component.onCompleted:
                             {
+                                // TODO: fails if item is created after list is loaded
                                 var magnitude = Math.floor(Math.log(fileSize) / Math.log(1000));
                                 var magnitudeToByteUnit = ['B', 'KB', 'MB', 'GB'];
                                 this.text = (fileSize / Math.pow(1024, magnitude))

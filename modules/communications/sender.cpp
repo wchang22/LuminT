@@ -1,12 +1,12 @@
 #include <QFile>
 #include <QNetworkInterface>
 #include <QDir>
+#include <QDataStream>
 
 #include "sender.hpp"
 #include "modules/qml/register_device_list.hpp"
 #include "modules/message/text_message.hpp"
 #include "modules/message/file_message.hpp"
-#include "modules/utilities/utilities.hpp"
 
 //-----------------------------------------------------------------------------
 // Constructor/Destructor
@@ -18,10 +18,11 @@ Sender::Sender(QObject *parent)
     , clientState(ClientState::DISCONNECTED)
     , messageState(MessageState::MESSAGE)
     , messenger()
+    , peerKey("")
     , peerIPAddress("")
     , registerDeviceList(nullptr)
     , encryptingTimer(this)
-    , currentFilePath("")
+    , fileTransferInfo({ "", 0, 0 })
 {
     connect(&clientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(socketError(QAbstractSocket::SocketError)));
@@ -80,6 +81,9 @@ void Sender::socketDisconnected()
     }
 
     clientState = ClientState::DISCONNECTED;
+
+    if (messageState == MessageState::FILE_SENDING || messageState == MessageState::FILE_PAUSED)
+        saveFileTransferInfo();
 }
 
 void Sender::socketError(QAbstractSocket::SocketError error)
@@ -121,6 +125,7 @@ void Sender::connectToReceiver()
     clientSocket.connectToHostEncrypted(peerIPAddress, LuminT::PORT);
 
     clientState = ClientState::CONNECTING;
+
     messageState = MessageState::MESSAGE;
 }
 
@@ -159,8 +164,23 @@ QString Sender::getIPAddress() const
     return QStringLiteral("");
 }
 
+Sender::MessageState Sender::getMessageState() const
+{
+    return messageState;
+}
+
+QString Sender::getCurrentPath() const
+{
+    return fileTransferInfo.filePath;
+}
+
+float Sender::getCurrentProgress() const
+{
+    return fileTransferInfo.progress;
+}
+
 //-----------------------------------------------------------------------------
-// Read/Write
+// Handlers
 //-----------------------------------------------------------------------------
 
 void Sender::handleReadyRead()
@@ -213,6 +233,17 @@ void Sender::handleDeviceKey(QString deviceKey)
 
         AcknowledgeMessage ack(AcknowledgeMessage::Acknowledge::DEVICE_KEY_OK);
         messenger.sendMessage(ack);
+
+        peerKey = deviceKey;
+
+        FileTransferInfo retrievedFileTransferInfo = retrieveFileTransferInfo();
+
+        if (retrievedFileTransferInfo.filePath.length() != 0)
+        {
+            fileTransferInfo = retrievedFileTransferInfo;
+            messageState = MessageState::FILE_PAUSED;
+        }
+
         emit connected();
         return;
     }
@@ -240,18 +271,24 @@ void Sender::handleRequest(std::shared_ptr<RequestMessage> request)
                 return;
 
             uint32_t packetNumber = static_cast<uint32_t>(request->requestInfo.toULong());
-            FileMessage filePacket(currentFilePath, packetNumber);
+            FileMessage filePacket(fileTransferInfo.filePath, packetNumber);
             messenger.sendMessage(filePacket);
 
-            emit sendProgress((double) ++packetNumber * LuminT::PACKET_BYTES / currentFileSize);
+            fileTransferInfo.progress = (float) ++packetNumber *
+                                        LuminT::PACKET_BYTES / fileTransferInfo.fileSize;
+            emit sendProgress(fileTransferInfo.progress);
             break;
         }
         case RequestMessage::Request::CANCEL_FILE_TRANSFER:
         {
             messageState = MessageState::MESSAGE;
 
+            fileTransferInfo.progress = 0;
+
+            clearFileTransferInfo();
+
             emit fileCompleted();
-            emit sendProgress(0);
+            emit sendProgress(fileTransferInfo.progress);
             break;
         }
         case RequestMessage::Request::PAUSE_FILE_TRANSFER:
@@ -283,6 +320,9 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         case AcknowledgeMessage::Acknowledge::FILE_SUCCESS:
         {
             messageState = MessageState::MESSAGE;
+
+            clearFileTransferInfo();
+
             emit fileCompleted();
             break;
         }
@@ -290,6 +330,10 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
             break;
     }
 }
+
+//-----------------------------------------------------------------------------
+// Read/Write
+//-----------------------------------------------------------------------------
 
 bool Sender::sendTextMessage(QString text)
 {
@@ -308,19 +352,21 @@ bool Sender::sendFile(QString filePath)
     if (messageState == MessageState::FILE_SENDING)
         return false;
 
-    currentFilePath = filePath;
+    fileTransferInfo.filePath = filePath;
 
-    QFile file(currentFilePath);
-    currentFileSize = file.size();
+    QFile file(fileTransferInfo.filePath);
+    qint64 fileSize = file.size();
 
     // Todo: Error if max file size exceeded
-    if (currentFileSize > LuminT::MAX_FILE_SIZE || currentFileSize <= 0)
+    if (fileSize > LuminT::MAX_FILE_SIZE || fileSize <= 0)
         return false;
 
-    QString fileName(currentFilePath.split("/").last());
+    fileTransferInfo.fileSize = fileSize;
+
+    QString fileName(fileTransferInfo.filePath.split("/").last());
 
     QByteArray info;
-    info.append(Utilities::uint32ToByteArray(currentFileSize));
+    info.append(Utilities::uint32ToByteArray(fileTransferInfo.fileSize));
     info.append(fileName);
 
     InfoMessage fileInfo(InfoMessage::InfoType::FILE_INFO, info);
@@ -328,9 +374,98 @@ bool Sender::sendFile(QString filePath)
     if (!messenger.sendMessage(fileInfo))
         return false;
 
-    emit sendProgress(0);
+    fileTransferInfo.progress = 0;
+    emit sendProgress(fileTransferInfo.progress);
 
     messageState = MessageState::FILE_SENDING;
 
     return true;
+}
+
+void Sender::saveFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::SENDER_FILE_TRANSFER_INFO_NAME);
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+
+    QDataStream file(&fileTransferInfoFile);
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+    file >> fileTransferInfoMap;
+
+    fileTransferInfoMap.insert(peerKey, fileTransferInfo);
+
+    fileTransferInfoFile.close();
+    fileTransferInfoFile.open(QIODevice::WriteOnly);
+    file << fileTransferInfoMap;
+    fileTransferInfoFile.close();
+}
+
+Sender::FileTransferInfo Sender::retrieveFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::SENDER_FILE_TRANSFER_INFO_NAME);
+
+    if (!fileTransferInfoFile.exists() || fileTransferInfoFile.size() == 0)
+        return { "", 0, 0 };
+
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+    QDataStream file(&fileTransferInfoFile);
+
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+
+    file >> fileTransferInfoMap;
+    fileTransferInfoFile.close();
+
+    if (fileTransferInfoMap.find(peerKey) == fileTransferInfoMap.end())
+        return { "", 0, 0 };
+
+    return fileTransferInfoMap[peerKey];
+}
+
+void Sender::clearFileTransferInfo()
+{
+    QFile fileTransferInfoFile(LuminT::SENDER_FILE_TRANSFER_INFO_NAME);
+    fileTransferInfoFile.open(QIODevice::ReadOnly);
+
+    QDataStream file(&fileTransferInfoFile);
+    QMap<QString, FileTransferInfo> fileTransferInfoMap;
+    file >> fileTransferInfoMap;
+
+    fileTransferInfoMap.remove(peerKey);
+
+    fileTransferInfoFile.close();
+    fileTransferInfoFile.open(QIODevice::WriteOnly);
+    file << fileTransferInfoMap;
+    fileTransferInfoFile.close();
+}
+
+//-----------------------------------------------------------------------------
+// Overloaded Operators
+//-----------------------------------------------------------------------------
+
+QDataStream &operator<<(QDataStream &out, const QMap<QString, Sender::FileTransferInfo> &map)
+{
+    QMap<QString, Sender::FileTransferInfo>::const_iterator i = map.constBegin();
+
+    while (i != map.constEnd())
+    {
+        out << i.key() << i.value().filePath << i.value().fileSize << i.value().progress;
+        i++;
+    }
+
+    return out;
+}
+
+QDataStream &operator>>(QDataStream &in, QMap<QString, Sender::FileTransferInfo> &map)
+{
+    QString key;
+    QString filePath;
+    uint32_t fileSize;
+    float progress;
+
+    while (!in.atEnd())
+    {
+        in >> key >> filePath >> fileSize >> progress;
+        map.insert(key, { filePath, fileSize, progress });
+    }
+
+    return in;
 }

@@ -10,6 +10,7 @@
 #include "modules/message/request_message.hpp"
 #include "modules/message/info_message.hpp"
 #include "modules/message/acknowledge_message.hpp"
+#include "modules/utilities/utilities.hpp"
 
 /*!
  * \brief The Sender class, SSL socket that connects to a Receiver and
@@ -58,6 +59,13 @@ public:
     explicit Sender(QObject *parent = nullptr);
     ~Sender();
 
+    struct FileTransferInfo
+    {
+        QString filePath;
+        uint32_t fileSize;
+        float progress;
+    };
+
     enum class ClientState
     {
         ERROR,
@@ -75,6 +83,7 @@ public:
         FILE_SENDING,
         FILE_PAUSED,
     };
+    Q_ENUM(MessageState)
 
     /*!
      * \brief setup, sets up the CA certificate and recognized device keys
@@ -102,6 +111,10 @@ signals:
     void fileError();
 
 public slots:
+    MessageState getMessageState() const;
+    QString getCurrentPath() const;
+    float getCurrentProgress() const;
+
     void connectToReceiver();
     void disconnectFromReceiver();
 
@@ -139,19 +152,26 @@ private:
      */
     void handleDeviceKey(QString deviceKey);
 
+    void saveFileTransferInfo();
+    FileTransferInfo retrieveFileTransferInfo();
+    void clearFileTransferInfo();
+
     QSslSocket clientSocket;
     ClientState clientState;
     MessageState messageState;
 
     Messenger messenger;
 
+    QString peerKey;
     QString peerIPAddress;
     RegisterDeviceList *registerDeviceList;
 
     QTimer encryptingTimer;
 
-    QString currentFilePath;
-    qint64 currentFileSize;
+    FileTransferInfo fileTransferInfo;
 };
+
+QDataStream &operator<<(QDataStream &out, const QMap<QString, Sender::FileTransferInfo> &map);
+QDataStream &operator>>(QDataStream &in, QMap<QString, Sender::FileTransferInfo> &map);
 
 #endif // SENDER_HPP
