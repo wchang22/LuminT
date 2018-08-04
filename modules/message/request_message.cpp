@@ -6,7 +6,7 @@ RequestMessage::RequestMessage(Request request)
 }
 
 RequestMessage::RequestMessage(RequestMessage::Request request,
-                               QByteArray requestInfo)
+                               const QByteArray &requestInfo)
     : request(request)
     , requestInfo(requestInfo)
 {

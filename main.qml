@@ -4,17 +4,34 @@ import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 
 import communications 1.0
+import qml 1.0
 
 ApplicationWindow {
     visible: true
     width: (Qt.platform.os == 'android') ? Screen.width : 480
-    height: (Qt.platform.os == 'android') ? Screen.height : 480
+    height: (Qt.platform.os == 'android') ? Screen.height : Screen.height * 0.95
     title: qsTr('LuminT')
     onClosing: close.accepted = true
+    property int appState: Qt.application.state
 
     Component.onCompleted: {
         if (receiver.state() === Receiver.ServerState.ERROR)
             errorPopup.open();
+    }
+
+    onAppStateChanged: {
+        if (Qt.platform.os != 'android' || appState !== Qt.ApplicationSuspended)
+            return;
+
+        registerDeviceList.writeDeviceItems();
+
+        if (sender.getMessageState() === Sender.MessageState.FILE_PAUSED ||
+            sender.getMessageState() === Sender.MessageState.FILE_SENDING)
+            sender.saveFileTransferInfo();
+
+        if (receiver.getMessageState() === Receiver.MessageState.FILE_PAUSED ||
+            receiver.getMessageState() === Receiver.MessageState.FILE_SENDING)
+            receiver.saveFileTransferInfo();
     }
 
     Popup {
@@ -62,6 +79,7 @@ ApplicationWindow {
 
     header: ToolBar {
         ToolButton {
+            id: backButton
             text: qsTr('‹')
             onClicked: {
                 sender.disconnectFromReceiver();
@@ -75,6 +93,21 @@ ApplicationWindow {
         id: window
         anchors.fill: parent
         initialItem: startPageComp
+        focus: true
+        Keys.onReleased:
+        {
+            if (event.key !== Qt.Key_Back)
+                return;
+
+            if (window.depth === 1)
+                Qt.quit();
+
+            sender.disconnectFromReceiver();
+            receiver.stopServer();
+            window.pop(null);
+
+            event.accepted = true;
+        }
 
         Component {
             id: startPageComp

@@ -1,6 +1,6 @@
 #include "info_message.hpp"
 
-InfoMessage::InfoMessage(InfoType infoType, QByteArray info)
+InfoMessage::InfoMessage(InfoType infoType, const QByteArray &info)
     : infoType(infoType)
     , info(info)
 {

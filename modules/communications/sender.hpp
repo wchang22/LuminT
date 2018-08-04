@@ -119,9 +119,11 @@ public slots:
     void disconnectFromReceiver();
 
     // Sets Receiver's IP address using Receiver's ID
-    void setPeerIPAddress(QString peerID);
-    bool sendTextMessage(QString text);
-    bool sendFile(QString filePath);
+    void setPeerIPAddress(const QString &peerID);
+    bool sendTextMessage(const QString &text);
+    bool sendFile(const QString &filePath);
+
+    void saveFileTransferInfo();
 
 private slots:
     void socketConnected(); // Socket has been connected
@@ -150,9 +152,8 @@ private:
      *          If not, sends an error acknowledgement
      * \param deviceKey, Receiver's device key
      */
-    void handleDeviceKey(QString deviceKey);
+    void handleDeviceKey(const QString &deviceKey);
 
-    void saveFileTransferInfo();
     FileTransferInfo retrieveFileTransferInfo();
     void clearFileTransferInfo();
 

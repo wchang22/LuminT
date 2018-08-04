@@ -14,7 +14,7 @@ QByteArray Utilities::uint32ToByteArray(uint32_t integer)
     return byteArray;
 }
 
-uint32_t Utilities::byteArrayToUint32(QByteArray byteArray)
+uint32_t Utilities::byteArrayToUint32(const QByteArray &byteArray)
 {
     uint32_t integer = 0;
     for (int i = 0; i < LuminT::UINT32_BYTE_REP; i++)
@@ -29,7 +29,7 @@ QString Utilities::paste() const
     return clipboard->text();
 }
 
-void Utilities::copy(QString text)
+void Utilities::copy(const QString &text)
 {
     clipboard->setText(text);
 }

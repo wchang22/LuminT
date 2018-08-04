@@ -285,6 +285,7 @@ ScrollView {
                     placeholderText: 'Enter Text'
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     selectByMouse: true
+                    inputMethodHints: Qt.ImhNoAutoUppercase
                 }
 
                 Row {

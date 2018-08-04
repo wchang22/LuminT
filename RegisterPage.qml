@@ -70,7 +70,7 @@ Page {
                     Layout.preferredWidth: 360
                     Layout.preferredHeight: 40
                     Layout.fillWidth: true
-                    inputMethodHints: Qt.ImhLowercaseOnly
+                    inputMethodHints: Qt.ImhLowercaseOnly | Qt.ImhNoPredictiveText
                     maximumLength: 8
                     selectByMouse: true
                     readOnly: readOnlyStatus

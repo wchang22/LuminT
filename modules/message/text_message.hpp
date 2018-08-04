@@ -8,7 +8,7 @@
 class TextMessage : public Message
 {
 public:
-    TextMessage(QString &text);
+    TextMessage(const QString &text);
     TextMessage(QByteArray &textVector);
 
     ~TextMessage();

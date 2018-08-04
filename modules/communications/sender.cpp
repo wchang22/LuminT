@@ -138,7 +138,7 @@ void Sender::disconnectFromReceiver()
     clientState = ClientState::DISCONNECTED;
 }
 
-void Sender::setPeerIPAddress(QString peerID)
+void Sender::setPeerIPAddress(const QString &peerID)
 {
     // Replace the last part of Sender's IP address with Receiver's ID
     // to obtain Receiver's IP address
@@ -221,7 +221,7 @@ void Sender::handleInfo(std::shared_ptr<InfoMessage> info)
     }
 }
 
-void Sender::handleDeviceKey(QString deviceKey)
+void Sender::handleDeviceKey(const QString &deviceKey)
 {
     const int deviceItemsSize = registerDeviceList->items().size();
 
@@ -335,7 +335,7 @@ void Sender::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
 // Read/Write
 //-----------------------------------------------------------------------------
 
-bool Sender::sendTextMessage(QString text)
+bool Sender::sendTextMessage(const QString &text)
 {
     if (messageState == MessageState::FILE_SENDING)
         return false;
@@ -347,7 +347,7 @@ bool Sender::sendTextMessage(QString text)
     return true;
 }
 
-bool Sender::sendFile(QString filePath)
+bool Sender::sendFile(const QString &filePath)
 {
     if (messageState == MessageState::FILE_SENDING)
         return false;
@@ -435,6 +435,8 @@ void Sender::clearFileTransferInfo()
     fileTransferInfoFile.open(QIODevice::WriteOnly);
     file << fileTransferInfoMap;
     fileTransferInfoFile.close();
+
+    fileTransferInfo = { "", 0, 0 };
 }
 
 //-----------------------------------------------------------------------------

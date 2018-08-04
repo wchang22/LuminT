@@ -137,7 +137,7 @@ bool RegisterDeviceList::checkNewDeviceKey()
 {
     // New Device keys must have be 8 characters and
     // cannot be the same as our device key
-    return (deviceItems.first().deviceKey.length() == 8 ||
+    return (deviceItems.first().deviceKey.length() == LuminT::DEVICE_KEY_SIZE ||
             deviceItems.first().deviceKey.length() == 0) &&
             deviceItems.first().deviceKey != getThisKey();
 }

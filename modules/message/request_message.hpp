@@ -21,7 +21,7 @@ public:
     };
 
     RequestMessage(Request request);
-    RequestMessage(Request request, QByteArray requestInfo);
+    RequestMessage(Request request, const QByteArray &requestInfo);
     RequestMessage(QByteArray &requestBytes);
 
     ~RequestMessage();

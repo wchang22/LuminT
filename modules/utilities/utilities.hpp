@@ -45,11 +45,11 @@ public:
     Utilities(QClipboard *clipboard);
 
     static QByteArray uint32ToByteArray(uint32_t integer);
-    static uint32_t byteArrayToUint32(QByteArray byteArray);
+    static uint32_t byteArrayToUint32(const QByteArray &byteArray);
 
 public slots:
     QString paste() const;
-    void copy(QString text);
+    void copy(const QString &text);
 
 private:
     QClipboard *clipboard;

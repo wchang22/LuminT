@@ -72,8 +72,8 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
     if (!certFile.open(QFile::ReadOnly) || !keyFile.open(QFile::ReadOnly))
         return;
 
-    QSslCertificate cert = QSslCertificate(certFile.readAll());
-    QSslKey key = QSslKey(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
+    QSslCertificate cert(certFile.readAll());
+    QSslKey key(keyFile.readAll(), QSsl::Rsa, QSsl::Pem);
 
     certFile.close();
     keyFile.close();
@@ -127,7 +127,7 @@ void Receiver::setup(RegisterDeviceList &registerDeviceList)
 {
     ipAddress = getIPAddress();
 
-    // If IP address is blank, internet is not connected, got into ERROR state
+    // If IP address is blank, internet is not connected, go into ERROR state
     if (ipAddress.length() == 0)
     {
         serverState = ServerState::ERROR;
@@ -292,14 +292,14 @@ void Receiver::handleReadyRead()
 
     if (remainingBytes - LuminT::PACKET_BYTES <= 0)
     {
-        emit fileCompleted();
-
         AcknowledgeMessage fileSuccess(AcknowledgeMessage::Acknowledge::FILE_SUCCESS);
         messenger.sendMessage(fileSuccess);
 
         messageState = MessageState::MESSAGE;
 
         clearFileTransferInfo();
+
+        emit fileCompleted();
         return;
     }
 
@@ -337,7 +337,7 @@ void Receiver::handleInfo(std::shared_ptr<InfoMessage> info)
     }
 }
 
-void Receiver::handleDeviceKey(QString deviceKey)
+void Receiver::handleDeviceKey(const QString &deviceKey)
 {
     const int deviceItemsSize = registerDeviceList->items().size();
 
@@ -418,12 +418,12 @@ void Receiver::handlePacket(std::shared_ptr<FileMessage> packet)
 // File Methods
 //-----------------------------------------------------------------------------
 
-void Receiver::setFilePath(QString path)
+void Receiver::setFilePath(const QString &path)
 {
     fileTransferInfo.folderPath = path + '/';
 }
 
-void Receiver::createFile(QString name)
+void Receiver::createFile(const QString &name)
 {
     if (name.length() == 0)
     {

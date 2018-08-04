@@ -151,13 +151,15 @@ public slots:
     // Allows qml to query Receiver's ID, the last 1-3 digits of its IP
     QString getThisID() const;
 
-    void setFilePath(QString path);
-    void createFile(QString name);
+    void setFilePath(const QString &path);
+    void createFile(const QString &name);
     void requestFirstPacket();
     void pauseFileTransfer();
     void cancelFileTransfer();
     void resumeFileTransfer();
     void sendFileError();
+
+    void saveFileTransferInfo();
 
 private slots:
     void socketReady(); // Socket has been encrypted
@@ -185,11 +187,10 @@ private:
      *          If not, sends an error acknowledgement
      * \param deviceKey, Sender's device key
      */
-    void handleDeviceKey(QString deviceKey);
+    void handleDeviceKey(const QString &deviceKey);
 
     void handleFileInfo(QByteArray &info);
 
-    void saveFileTransferInfo();
     FileTransferInfo retrieveFileTransferInfo();
     void clearFileTransferInfo();
 

@@ -1,6 +1,6 @@
 #include "text_message.hpp"
 
-TextMessage::TextMessage(QString &text)
+TextMessage::TextMessage(const QString &text)
     : text(text)
 {
 }

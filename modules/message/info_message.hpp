@@ -16,7 +16,7 @@ public:
         FILE_INFO,
     };
 
-    InfoMessage(InfoType infoType, QByteArray info);
+    InfoMessage(InfoType infoType, const QByteArray &info);
     InfoMessage(QByteArray &infoBytes);
 
     ~InfoMessage();

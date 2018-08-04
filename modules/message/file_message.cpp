@@ -13,8 +13,7 @@ FileMessage::FileMessage(QByteArray &fileBytes)
     , fileData(fileBytes.mid(LuminT::SEQ_BYTES))
 {
     for (int i = 0; i < LuminT::SEQ_BYTES; i++)
-        this->seq += (fileBytes.at(i) << ((LuminT::SEQ_BYTES - i - 1) *
-                                           LuminT::BYTE));
+        this->seq += (fileBytes.at(i) << ((LuminT::SEQ_BYTES - i - 1) * LuminT::BYTE));
 }
 
 QByteArray FileMessage::serialize()
