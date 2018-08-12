@@ -10,7 +10,8 @@ RegisterDeviceModel::RegisterDeviceModel(QObject *parent)
 
 RegisterDeviceModel::~RegisterDeviceModel()
 {
-
+    if (deviceList)
+        deviceList->deleteLater();
 }
 
 int RegisterDeviceModel::rowCount(const QModelIndex &parent) const

@@ -1,6 +1,8 @@
 #include "android_permissions.hpp"
 
+#ifdef Q_OS_ANDROID
 using namespace QtAndroid;
+#endif
 
 void AndroidPermissions::requestPermissions()
 {

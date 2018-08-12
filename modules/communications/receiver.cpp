@@ -54,7 +54,7 @@ void Receiver::incomingConnection(qintptr serverSocketDescriptor)
 {
     this->close();
 
-    serverSocket = new QSslSocket(this);
+    serverSocket = new QSslSocket();
 
     // Attempts to connect serverSocket to clientSocket of Sender
     if (!serverSocket->setSocketDescriptor(serverSocketDescriptor))
@@ -191,6 +191,7 @@ void Receiver::stopServer()
     disconnect(serverSocket, &QSslSocket::disconnected, this, &Receiver::socketDisconnected);
 
     serverSocket->abort();
+    serverSocket = nullptr;
 
     serverState = ServerState::DISCONNECTED;
 }
@@ -383,6 +384,7 @@ void Receiver::handleAcknowledge(std::shared_ptr<AcknowledgeMessage> ack)
         {
             serverState = ServerState::UNRECOGNIZED;
             serverSocket->abort();
+            serverSocket = nullptr;
             break;
         }
         case AcknowledgeMessage::Acknowledge::DEVICE_KEY_OK:

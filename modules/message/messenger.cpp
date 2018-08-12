@@ -202,8 +202,9 @@ bool Messenger::readFile(uint32_t packetSize)
     messageData.append(messageSeq);
 
     messageContent.resize(packetSize);
-    if (dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()), packetSize)
-        < packetSize)
+    int64_t bytesRead = dataStream.readRawData(reinterpret_cast<char*>(messageContent.data()),
+                                           packetSize);
+    if (bytesRead == -1 || (uint64_t) bytesRead < packetSize)
     {
         dataStream.rollbackTransaction();
         return false;
