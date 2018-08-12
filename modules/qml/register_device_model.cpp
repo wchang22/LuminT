@@ -138,3 +138,5 @@ RegisterDeviceList *RegisterDeviceModel::getDeviceList() const
 {
     return deviceList;
 }
+
+#include "moc_register_device_model.cpp"

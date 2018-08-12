@@ -146,3 +146,5 @@ QString RegisterDeviceList::getThisKey() const
 {
     return thisKey;
 }
+
+#include "moc_register_device_list.cpp"

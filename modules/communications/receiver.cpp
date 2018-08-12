@@ -608,3 +608,5 @@ QDataStream &operator>>(QDataStream &in, QMap<QString, Receiver::FileTransferInf
 
     return in;
 }
+
+#include "moc_receiver.cpp"
