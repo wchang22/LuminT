@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QClipboard>
+#include <cmath>
 
 /*!
  * Namespace LuminT, all constants used throughout LuminT are defined here
