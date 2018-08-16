@@ -1,17 +1,17 @@
 <RCC>
     <qresource prefix="/">
-        <file>main.qml</file>
+        <file>qml/main.qml</file>
         <file>qtquickcontrols2.conf</file>
-        <file>SenderWaitingPage.qml</file>
-        <file>StartPage.qml</file>
-        <file>ReceiverWaitingPage.qml</file>
-        <file>SenderPage.qml</file>
-        <file>ReceiverPage.qml</file>
-        <file>RegisterPage.qml</file>
-        <file>ConnectionErrorPage.qml</file>
+        <file>qml/SenderWaitingPage.qml</file>
+        <file>qml/StartPage.qml</file>
+        <file>qml/ReceiverWaitingPage.qml</file>
+        <file>qml/SenderPage.qml</file>
+        <file>qml/ReceiverPage.qml</file>
+        <file>qml/RegisterPage.qml</file>
+        <file>qml/ConnectionErrorPage.qml</file>
         <file>certificates/rootCA.pem</file>
         <file>certificates/server.key</file>
         <file>certificates/server.pem</file>
-        <file>ConnectionUnrecognizedPage.qml</file>
+        <file>qml/ConnectionUnrecognizedPage.qml</file>
     </qresource>
 </RCC>

@@ -1,6 +1,11 @@
 # LuminT: Luminous Transfer
 Wireless Data Transfer Software for Text and Files
 
+![Front Page](https://raw.githubusercontent.com/wchang22/LuminT/master/images/frontPage.png)
+![Device Registration Page](https://raw.githubusercontent.com/wchang22/LuminT/master/images/devicePage.png)
+![Receiver Waiting Page](https://raw.githubusercontent.com/wchang22/LuminT/master/images/waitingPage.png)
+![Receiver Transferring Page](https://raw.githubusercontent.com/wchang22/LuminT/master/images/receiverPage.png)
+
 ## Requirements
 * [Qt](https://www.qt.io)
 * [OpenSSL](https://www.openssl.org/)
@@ -36,7 +41,7 @@ Create an empty folder on your computer which will store the files before being 
 	  export ANDROID_NDK_HOST=windows-x86_64 \
       export ANDROID_NDK_ROOT=/path/to/android/ndk \
       export ANDROID_SDK_ROOT=/path/to/android/sdk \
-      export ANDROID_SDK_PLATORM=android-25 (or what is installed) \
+      export ANDROID_SDK_PLATFORM=android-25 (or what is installed) \
       export ANDROID_HOME=$ANDROID_SDK_ROOT \
 	  export BUILD_TARGET=/your/build/target \
 	  export DEPLOY_SETTINGS=android-liblumint.so-deployment-settings.json \
@@ -48,7 +53,7 @@ Create an empty folder on your computer which will store the files before being 
 	$ make -j4
     $ make install INSTALL_ROOT=$BUILD_TARGET
     $ androiddeployqt --output $BUILD_TARGET --input $DEPLOY_SETTINGS --sign $KEYSTORE lumint \
-      --android-platform $ANDROID_SDK_PLATORM --reinstall (optional --device <id>)
+      --android-platform $ANDROID_SDK_PLATFORM --reinstall (optional --device <id>)
       
 For the last command, androiddeployqt will attempt to find your android device. In the case that you have multiple, you will need to add the --device <id> flag. You can find the id by running:
     
